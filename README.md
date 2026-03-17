@@ -1,17 +1,56 @@
-# projeto_app
+# 📱 Projeto-mobile
 
-A new Flutter project.
+> _AINDA ESTAMOS DECIDINDO A IDEIA DO PROJETO_
 
-## Getting Started
+Este projeto representa o meu marco inicial na disciplina de **Desenvolvimento Mobile**. É um aplicativo simples desenvolvido em **Flutter**, focado em entender a anatomia de um Widget e o ciclo de vida básico de uma aplicação.
 
-This project is a starting point for a Flutter application.
+---
 
-A few resources to get you started if this is your first Flutter project:
+## 🎯 Objetivo do Projeto
 
-- [Learn Flutter](https://docs.flutter.dev/get-started/learn-flutter)
-- [Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Flutter learning resources](https://docs.flutter.dev/reference/learning-resources)
+O foco aqui não é a complexidade, mas a base sólida. O app foi construído para exercitar:
 
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+- A renderização de layouts com `Scaffold`.
+- O uso de **Widgets** de texto, botões e imagens.
+- A lógica inicial de alteração de estado (setState).
+
+---
+
+## ✨ Funcionalidades
+
+- **Interface Intuitiva:** Layout limpo e focado na usabilidade.
+- **Interatividade:** Botões que reagem ao toque do usuário.
+- **Feedback Visual:** Atualização de dados na tela em tempo real.
+
+---
+
+## 🛠️ Tecnologias Utilizadas
+
+| Ferramenta  | Descrição                                          |
+| :---------- | :------------------------------------------------- |
+| **Flutter** | Framework UI para desenvolvimento multiplataforma. |
+| **Dart**    | Linguagem de programação utilizada.                |
+| **VS Code** | Editor de código com extensões Flutter/Dart.       |
+
+---
+
+## 🚀 Como Executar o App
+
+Para rodar este projeto localmente, você precisa ter o Flutter instalado e configurado em sua máquina.
+
+1. **Clone este repositório:**
+   ```bash
+   git clone [https://github.com/seu-usuario/seu-repositorio.git](https://github.com/seu-usuario/seu-repositorio.git)
+   ```
+2. **Acessar a pasta do projeto:**
+   ```bash
+   cd nome-do-projeto
+   ```
+3. **Baixar as dependências do Pub:**
+   ```bash
+   flutter pub get
+   ```
+4. **Executar o app:**
+   ```bash
+   flutter run
+   ```
