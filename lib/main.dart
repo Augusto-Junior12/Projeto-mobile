@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:projeto_app/telas/telaHome.dart';
+import 'package:projeto_app/telas/telaLogin.dart';
 
 void main() {
   runApp(const MyApp());
@@ -17,7 +18,7 @@ class MyApp extends StatelessWidget {
       theme: ThemeData(
         primarySwatch: Colors.blue,
       ),
-      home: const TelaHome(),
+      home: const Telalogin(),
     );
   }
 }
