@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:projeto_app/telas/telaMapa.dart';
+import 'package:projeto_app/telas/telaRotas.dart';
 
 // 1. Mudamos para StatefulWidget para o menu poder interagir
 class TelaHome extends StatefulWidget {
@@ -11,6 +13,30 @@ class TelaHome extends StatefulWidget {
 class _TelaHomeState extends State<TelaHome> {
   // 2. Criamos uma variável para guardar qual aba está selecionada (começa no 0, que é a primeira)
   int _abaSelecionada = 0;
+
+  Widget _getTelaSelecionada() {
+    // Essa função retorna a tela que deve ser mostrada de acordo com a aba selecionada
+    switch (_abaSelecionada) {
+      case 0:
+        return const TelaMapa(); // Tela do mapa
+      case 1:
+        return const TelaRotas(); // Tela das rotas
+      case 2:
+        return const Center(
+          child: Text(
+            'Perfil do Estudante',
+            style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+          ),
+        ); // Tela de perfil (ainda sem conteúdo)
+      default:
+        return const Center(
+          child: Text(
+            'Tela não encontrada',
+            style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+          ),
+        ); // Caso algo dê errado, mostra uma mensagem de erro
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -29,94 +55,7 @@ class _TelaHomeState extends State<TelaHome> {
         elevation: 4, // Adiciona uma leve sombra embaixo do AppBar
       ),
 
-      body: Padding(
-        padding: const EdgeInsets.all(
-          16.0,
-        ), // Adiciona um pouco de espaço ao redor do conteúdo
-
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment
-              .stretch, // Estica o conteúdo para ocupar toda a largura disponível
-          children: [
-
-            const Text(
-              'Olá, estudante!',
-              style: TextStyle(
-                fontSize: 24,
-                fontWeight: FontWeight.bold,
-                color: Colors
-                    .indigo, // Deixa o texto do título com a mesma cor do AppBar
-              ),
-              textAlign: TextAlign.center, // Centraliza o texto
-            ),
-
-            const SizedBox(
-              height: 20,
-            ), // Adiciona um espaço entre o título e o conteúdo
-
-            const Text(
-              'Encontre a rota mais rápida para a faculdade.',
-              style: TextStyle(
-                fontSize: 16,
-                color: Colors
-                    .black87, // Deixa o texto com uma cor mais suave para leitura
-              ),
-              textAlign: TextAlign.center, // Centraliza o texto
-            ),
-
-            const SizedBox(
-              height: 30,
-            ), // Adiciona um espaço entre o texto e o campo
-
-            TextField(
-              decoration: InputDecoration(
-                labelText:
-                    'Digite sua localização atual', // Texto de dica para o usuário
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(
-                    8,
-                  ), // Deixa as bordas do campo arredondadas
-                ),
-                prefixIcon: const Icon(
-                  Icons.location_on,
-                ), // Adiciona um ícone de localização no início do campo
-              ),
-            ),
-
-            const SizedBox(
-              height: 20,
-            ), // Adiciona um espaço entre o campo de texto e o mapa
-
-            // O Mapa
-            Expanded(
-              child: Container(
-                decoration: BoxDecoration(
-                  color: Colors.blue[100], // Cor de fundo
-                  borderRadius: BorderRadius.circular(
-                    16,
-                  ), // Deixa as bordas do mapa arredondadas
-                  image: const DecorationImage(
-                    image: NetworkImage(
-                        'https://tile.openstreetmap.org/14/6504/8691.png'), // URL de Aracaju
-                    fit: BoxFit.cover, // Faz a imagem cobrir todo o espaço
-                    opacity: 0.8, // Deixa a imagem um pouco transparente
-                  ),
-                ),
-
-                child: const Center(
-                  child: Icon(
-                    Icons.location_on,
-                    size: 48,
-                    color: Colors.indigo, // Cor do ícone
-                  ),
-                ),
-
-              ),
-            ),
-
-          ],
-        ),
-      ),
+      body: _getTelaSelecionada(), // Mostra a tela de acordo com a aba selecionada
 
       // 3. A mágica acontece aqui: O Menu Inferior!
       bottomNavigationBar: BottomNavigationBar(

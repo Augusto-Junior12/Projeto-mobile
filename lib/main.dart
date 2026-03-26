@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:projeto_app/telas/telaHome.dart';
 import 'package:projeto_app/telas/telaLogin.dart';
 
 void main() {
