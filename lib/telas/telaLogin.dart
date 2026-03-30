@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:projeto_app/telas/telaHome.dart';
+import 'package:projeto_app/telas/telaEsqueciSenha.dart';
+import 'package:projeto_app/telas/telaCadastro.dart';
 
 // 1. Criamos a tela de login como um StatefulWidget para poder controlar os campos de texto e a navegação
 class Telalogin extends StatefulWidget {
@@ -83,6 +85,22 @@ class _TelaloginState extends State<Telalogin> {
               ),
             ),
 
+            const SizedBox(height: 10),
+
+            // Link "Esqueci minha senha" alinhado à direita
+            Align(
+              alignment: Alignment.centerRight,
+              child: TextButton(
+                onPressed: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (context) => const TelaEsqueciSenha()),
+                  );
+                },
+                child: const Text("Esqueci minha senha"),
+              ),
+            ),
+
             const SizedBox(height: 30), // Adiciona um espaço entre os campos de texto e o botão
 
             SizedBox( // Botão Entrar
@@ -91,6 +109,18 @@ class _TelaloginState extends State<Telalogin> {
                 onPressed: _entrar,
                 child: const Text("Entrar"),
               ),
+            ),
+
+            const SizedBox(height: 20),
+
+            TextButton(
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => const TelaCadastro()),
+                );
+              },
+              child: const Text("Não tem conta? Cadastre-se"),
             ),
           ],
         ), 
