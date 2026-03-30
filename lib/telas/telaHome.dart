@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:projeto_app/telas/telaMapa.dart';
 import 'package:projeto_app/telas/telaRotas.dart';
+import 'package:projeto_app/telas/telaPerfil.dart';
 
 // 1. Mudamos para StatefulWidget para o menu poder interagir
 class TelaHome extends StatefulWidget {
@@ -22,12 +23,7 @@ class _TelaHomeState extends State<TelaHome> {
       case 1:
         return const TelaRotas(); // Tela das rotas
       case 2:
-        return const Center(
-          child: Text(
-            'Perfil do Estudante',
-            style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
-          ),
-        ); // Tela de perfil (ainda sem conteúdo)
+        return const TelaPerfil(); // 2. MUDANÇA AQUI: Chama a tela de perfil real
       default:
         return const Center(
           child: Text(
