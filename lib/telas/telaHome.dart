@@ -3,7 +3,6 @@ import 'package:projeto_app/telas/telaMapa.dart';
 import 'package:projeto_app/telas/telaRotas.dart';
 import 'package:projeto_app/telas/telaPerfil.dart';
 
-// 1. Mudamos para StatefulWidget para o menu poder interagir
 class TelaHome extends StatefulWidget {
   const TelaHome({super.key});
 
@@ -11,88 +10,65 @@ class TelaHome extends StatefulWidget {
   State<TelaHome> createState() => _TelaHomeState();
 }
 
+// Sistema para decidir qual tela mostrar com base na aba selecionada
 class _TelaHomeState extends State<TelaHome> {
-  // 2. Criamos uma variável para guardar qual aba está selecionada (começa no 0, que é a primeira)
   int _abaSelecionada = 0;
 
   Widget _getTelaSelecionada() {
-    // Essa função retorna a tela que deve ser mostrada de acordo com a aba selecionada
     switch (_abaSelecionada) {
       case 0:
-        return const TelaMapa(); // Tela do mapa
+        return const TelaMapa();
       case 1:
-        return const TelaRotas(); // Tela das rotas
+        return const TelaRotas();
       case 2:
-        return const TelaPerfil(); // 2. MUDANÇA AQUI: Chama a tela de perfil real
+        return const TelaPerfil();
       default:
-        return const Center(
-          child: Text(
-            'Tela não encontrada',
-            style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
-          ),
-        ); // Caso algo dê errado, mostra uma mensagem de erro
+        return const Center(child: Text('Tela não encontrada'));
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
+    // PopScope intercepta o botão "voltar" físico ou por gestos do celular
+    return PopScope(
+      canPop: _abaSelecionada == 0, // Só permite fechar a tela se estiver na aba 0
+      onPopInvokedWithResult: (didPop, result) {
+        if (didPop) return;
 
-      appBar: AppBar(
-        title: const Text(
-          'UniGo',
-          style: TextStyle(
-            fontWeight: FontWeight.bold,
-          ), // Deixa o nome mais destacado
+        // Se não estiver na aba Mapa, volta para ela em vez de sair
+        setState(() {
+          _abaSelecionada = 0;
+        });
+      },
+      child: Scaffold(
+        appBar: AppBar(
+          title: const Text(
+            'UniGo',
+            style: TextStyle(fontWeight: FontWeight.bold),
+          ),
+          centerTitle: true,
+          backgroundColor: Colors.indigo,
+          foregroundColor: Colors.white,
+          automaticallyImplyLeading: false,
+          elevation: 4,
         ),
-        centerTitle: true, // Centraliza o título
-        backgroundColor: Colors.indigo, // Cor de fundo do AppBar
-        foregroundColor: Colors.white, // Deixa o texto do título branco para dar contraste
-        elevation: 4, // Adiciona uma leve sombra embaixo do AppBar
+        body: _getTelaSelecionada(),
+        bottomNavigationBar: BottomNavigationBar(
+          currentIndex: _abaSelecionada,
+          onTap: (indice) {
+            setState(() {
+              _abaSelecionada = indice;
+            });
+          },
+          selectedItemColor: Colors.indigo,
+          unselectedItemColor: Colors.grey,
+          items: const [
+            BottomNavigationBarItem(icon: Icon(Icons.map), label: 'Mapa'),
+            BottomNavigationBarItem(icon: Icon(Icons.directions_bus), label: 'Rotas'),
+            BottomNavigationBarItem(icon: Icon(Icons.person), label: 'Perfil'),
+          ],
+        ),
       ),
-
-      body: _getTelaSelecionada(), // Mostra a tela de acordo com a aba selecionada
-
-      // 3. A mágica acontece aqui: O Menu Inferior!
-      bottomNavigationBar: BottomNavigationBar(
-        currentIndex: _abaSelecionada, // Diz ao menu qual aba deve ficar acesa
-        
-        onTap: (indice) {
-          // Quando clica num botão, ele atualiza a tela
-          setState(() {
-            _abaSelecionada = indice;
-          });
-        },
-
-        selectedItemColor: Colors.indigo, // Cor do botão clicado
-        unselectedItemColor: Colors.grey, // Cor dos botões inativos
-        
-        items: const [
-
-          BottomNavigationBarItem(
-            icon: Icon(
-              Icons.map,
-            ),
-            label: 'Mapa',
-          ),
-
-          BottomNavigationBarItem(
-            icon: Icon(
-              Icons.directions_bus,
-            ), // Ícone de ônibus para rotas
-            label: 'Rotas',
-          ),
-
-          BottomNavigationBarItem(
-            icon: Icon(
-              Icons.person,
-            ),
-            label: 'Perfil',
-          ),
-
-        ],
-      ),
-
     );
   }
 }
