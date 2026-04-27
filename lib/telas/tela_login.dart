@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:projeto_app/telas/telaHome.dart';
-import 'package:projeto_app/telas/telaEsqueciSenha.dart';
-import 'package:projeto_app/telas/telaCadastro.dart';
+import 'package:projeto_app/telas/tela_home.dart';
+import 'package:projeto_app/telas/tela_esqueci_senha.dart';
+import 'package:projeto_app/telas/tela_cadastro.dart';
 import 'package:projeto_app/utils/validadores.dart'; 
 
 class Telalogin extends StatefulWidget {

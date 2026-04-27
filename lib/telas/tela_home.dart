@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:projeto_app/telas/telaMapa.dart';
-import 'package:projeto_app/telas/telaRotas.dart';
-import 'package:projeto_app/telas/telaPerfil.dart';
+import 'package:projeto_app/telas/tela_mapa.dart';
+import 'package:projeto_app/telas/tela_rotas.dart';
+import 'package:projeto_app/telas/tela_perfil.dart';
 
 class TelaHome extends StatefulWidget {
   const TelaHome({super.key});

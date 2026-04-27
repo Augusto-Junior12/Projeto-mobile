@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:projeto_app/telas/telaHome.dart';
+import 'package:projeto_app/telas/tela_home.dart';
 import 'package:projeto_app/utils/validadores.dart';
 
 class TelaCadastro extends StatefulWidget {

@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:projeto_app/components/botao_remover.dart';
 
+// Componente reutilizável para construir cada item da lista
 class ItemRota extends StatelessWidget {
   final String titulo;
   final String subtitulo;
@@ -16,7 +18,6 @@ class ItemRota extends StatelessWidget {
     required this.aoRemover,
   });
 
-  // Widget que representa cada item de rota na lista
   @override
   Widget build(BuildContext context) {
     return Card(
@@ -55,33 +56,16 @@ class ItemRota extends StatelessWidget {
             )
           ],
         ),
-        // Menu de opções (Editar / Remover)
-        trailing: PopupMenuButton<String>(
-          onSelected: (valor) {
-            if (valor == 'editar') aoEditar();
-            if (valor == 'remover') aoRemover();
-          },
-          itemBuilder: (context) => [
-            const PopupMenuItem(
-              value: 'editar',
-              child: Row(
-                children: [
-                  Icon(Icons.edit, color: Colors.indigo),
-                  SizedBox(width: 8),
-                  Text('Editar'),
-                ],
-              ),
+        // Aqui deixamos as opções mais visíveis e usamos o componente exigido
+        trailing: Row(
+          mainAxisSize: MainAxisSize.min, // Ocupa apenas o espaço necessário
+          children: [
+            IconButton(
+              icon: const Icon(Icons.edit, color: Colors.indigo),
+              tooltip: 'Editar',
+              onPressed: aoEditar,
             ),
-            const PopupMenuItem(
-              value: 'remover',
-              child: Row(
-                children: [
-                  Icon(Icons.delete, color: Colors.red),
-                  SizedBox(width: 8),
-                  Text('Remover', style: TextStyle(color: Colors.red)),
-                ],
-              ),
-            ),
+            BotaoRemover(aoPressionar: aoRemover),
           ],
         ),
       ),

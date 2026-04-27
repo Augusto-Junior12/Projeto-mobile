@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:projeto_app/telas/telaEditardados.dart';
-import 'package:projeto_app/telas/telaLogin.dart';
+import 'package:projeto_app/telas/tela_editar_dados.dart';
+import 'package:projeto_app/telas/tela_login.dart';
 import 'package:projeto_app/utils/componentes.dart';
 
 class TelaPerfil extends StatelessWidget {
