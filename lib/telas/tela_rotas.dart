@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:projeto_app/services/map_route_service.dart';
+import 'package:projeto_app/widgets/route_list_item.dart';
 
-// 1. Criamos a tela de rotas como um StatefulWidget para poder adicionar interatividade no futuro
+// 1. Tela de rotas como StatefulWidget para poder exibir a lista dinamicamente
 class TelaRotas extends StatefulWidget {
   const TelaRotas({super.key});
 
@@ -213,8 +214,10 @@ class _TelaRotasState extends State<TelaRotas> {
                   return;
                 }
 
+                final nomeDaRota = nomeController.text;
+
                 _mapService.addRoute(
-                  name: nomeController.text,
+                  name: nomeDaRota,
                   origin: origemController.text,
                   destination: destinoController.text,
                   estimatedTime: tempoController.text,
@@ -222,10 +225,27 @@ class _TelaRotasState extends State<TelaRotas> {
 
                 Navigator.pop(context);
 
+                // ✅ Snackbar de confirmação ao cadastrar nova rota
                 ScaffoldMessenger.of(context).showSnackBar(
                   SnackBar(
-                    content: Text('✅ Rota "${nomeController.text}" adicionada com sucesso!'),
-                    backgroundColor: Colors.green,
+                    content: Row(
+                      children: [
+                        const Icon(Icons.check_circle, color: Colors.white),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            'Rota "$nomeDaRota" cadastrada com sucesso!',
+                            style: const TextStyle(fontWeight: FontWeight.bold),
+                          ),
+                        ),
+                      ],
+                    ),
+                    backgroundColor: Colors.green.shade700,
+                    duration: const Duration(seconds: 3),
+                    behavior: SnackBarBehavior.floating,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(10),
+                    ),
                   ),
                 );
               },
@@ -284,77 +304,94 @@ class _TelaRotasState extends State<TelaRotas> {
     );
   }
 
-  // 2. Construímos a interface da tela de rotas, agora dinâmica com gestão de rotas
+  // 2. Banner de contador de rotas — fica abaixo do AppBar, cor levemente roxa
+  Widget _buildRouteCounter(int total) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 16),
+      decoration: const BoxDecoration(
+        // Tom entre roxo e branco, bem próximo do branco (lavanda suave)
+        color: Color(0xFFECEAF8),
+        border: Border(
+          bottom: BorderSide(color: Color(0xFFD5D0F0), width: 1),
+        ),
+      ),
+      child: Text(
+        'Total de rotas ativas: $total',
+        textAlign: TextAlign.center,
+        style: const TextStyle(
+          fontSize: 15,
+          fontWeight: FontWeight.bold,
+          color: Color(0xFF3F3D8F), // roxo escuro combinando com o indigo do app
+        ),
+      ),
+    );
+  }
+
+  // 3. Construção da interface da tela de rotas
   @override
   Widget build(BuildContext context) {
     final routesList = _mapService.routes.value;
 
-    return Stack(
+    return Column(
       children: [
-        // ── Lista de rotas ─────────────────────────────────────────────────
-        ListView(
-          padding: const EdgeInsets.all(16.0),
+        // ── Contador de rotas logo abaixo do AppBar ─────────────────────
+        _buildRouteCounter(routesList.length),
 
-          // 3. Adicionamos um título e uma lista de rotas disponíveis, cada uma com um ícone, nome e tempo estimado
-          children: [
-            const Text(
-              'Rotas Disponíveis',
-              style: TextStyle(
-                fontSize: 24,
-                fontWeight: FontWeight.bold,
-                color: Colors.indigo,
-              ),
-              textAlign: TextAlign.center,
-            ),
-
-            const SizedBox(height: 20),
-
-            // Lista dinâmica de rotas
-            if (routesList.isEmpty)
-              const Padding(
-                padding: EdgeInsets.symmetric(vertical: 40),
-                child: Text(
-                  'Nenhuma rota cadastrada.\nToque no botão + para adicionar.',
-                  textAlign: TextAlign.center,
-                  style: TextStyle(color: Colors.grey, fontSize: 16),
-                ),
-              )
-            else
-              // 4. Cada rota é representada por um ListTile dinâmico
-              ...routesList.map((route) => Card(
-                    margin: const EdgeInsets.only(bottom: 8),
-                    child: ListTile(
-                      leading: Icon(
-                        Icons.directions_bus,
-                        color: route.hasGeoData ? Colors.indigo : Colors.grey,
-                      ),
-                      title: Text(route.name),
-                      subtitle: Text('${route.origin} → ${route.destination}\nTempo: ${route.estimatedTime}'),
-                      isThreeLine: true,
-                      trailing: IconButton(
-                        icon: const Icon(Icons.delete_outline, color: Colors.red),
-                        tooltip: 'Excluir rota',
-                        onPressed: () => _confirmarExclusaoRota(context, route),
-                      ),
-                      onTap: () => _mostrarDetalhesRota(context, route),
+        // ── Lista de rotas + FAB ─────────────────────────────────────────
+        Expanded(
+          child: Stack(
+            children: [
+              ListView(
+                padding: const EdgeInsets.all(16.0),
+                children: [
+                  const Text(
+                    'Rotas Disponíveis',
+                    style: TextStyle(
+                      fontSize: 24,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.indigo,
                     ),
-                  )),
+                    textAlign: TextAlign.center,
+                  ),
 
-            // Espaço extra no final para não ficar atrás do FAB
-            const SizedBox(height: 80),
-          ],
-        ),
+                  const SizedBox(height: 20),
 
-        // ── Botão Flutuante: Adicionar Rota ────────────────────────────────
-        Positioned(
-          bottom: 16,
-          right: 16,
-          child: FloatingActionButton(
-            onPressed: () => _mostrarDialogoAdicionarRota(context),
-            backgroundColor: Colors.indigo,
-            foregroundColor: Colors.white,
-            tooltip: 'Adicionar nova rota',
-            child: const Icon(Icons.add),
+                  // Lista dinâmica de rotas usando o componente reutilizável
+                  if (routesList.isEmpty)
+                    const Padding(
+                      padding: EdgeInsets.symmetric(vertical: 40),
+                      child: Text(
+                        'Nenhuma rota cadastrada.\nToque no botão + para adicionar.',
+                        textAlign: TextAlign.center,
+                        style: TextStyle(color: Colors.grey, fontSize: 16),
+                      ),
+                    )
+                  else
+                    ...routesList.map((route) => RouteListItem(
+                          route: route,
+                          onTap: () => _mostrarDetalhesRota(context, route),
+                          onDelete: () => _confirmarExclusaoRota(context, route),
+                        )),
+
+                  // Espaço extra no final para não ficar atrás do FAB
+                  const SizedBox(height: 80),
+                ],
+              ),
+
+              // ── Botão Flutuante: Adicionar Rota ────────────────────────
+              Positioned(
+                bottom: 16,
+                right: 16,
+                child: FloatingActionButton(
+                  onPressed: () => _mostrarDialogoAdicionarRota(context),
+                  backgroundColor: Colors.indigo,
+                  foregroundColor: Colors.white,
+                  tooltip: 'Adicionar nova rota',
+                  child: const Icon(Icons.add),
+                ),
+              ),
+            ],
           ),
         ),
       ],

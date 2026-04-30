@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:projeto_app/telas/telaMapa.dart';
-import 'package:projeto_app/telas/telaRotas.dart';
-import 'package:projeto_app/telas/telaPerfil.dart';
+import 'package:projeto_app/telas/tela_mapa.dart';
+import 'package:projeto_app/telas/tela_rotas.dart';
+import 'package:projeto_app/telas/tela_perfil.dart';
 
 // 1. Mudamos para StatefulWidget para o menu poder interagir
 class TelaHome extends StatefulWidget {
@@ -49,6 +49,7 @@ class _TelaHomeState extends State<TelaHome> {
         backgroundColor: Colors.indigo, // Cor de fundo do AppBar
         foregroundColor: Colors.white, // Deixa o texto do título branco para dar contraste
         elevation: 4, // Adiciona uma leve sombra embaixo do AppBar
+        automaticallyImplyLeading: false, // Remove a seta de voltar
       ),
 
       body: _getTelaSelecionada(), // Mostra a tela de acordo com a aba selecionada
