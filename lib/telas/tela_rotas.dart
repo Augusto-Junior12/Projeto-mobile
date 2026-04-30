@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:projeto_app/services/map_route_service.dart';
-import 'package:projeto_app/widgets/route_list_item.dart';
+import 'package:projeto_app/components/item_rota.dart';
+import 'package:projeto_app/utils/componentes.dart';
 
-// 1. Tela de rotas como StatefulWidget para poder exibir a lista dinamicamente
+// Tela de rotas — usa ItemRota (component) e CaixaDialogo (utils) do orientador
 class TelaRotas extends StatefulWidget {
   const TelaRotas({super.key});
 
@@ -11,13 +12,11 @@ class TelaRotas extends StatefulWidget {
 }
 
 class _TelaRotasState extends State<TelaRotas> {
-  // Referência ao serviço de rotas (Singleton)
   final MapRouteService _mapService = MapRouteService();
 
   @override
   void initState() {
     super.initState();
-    // Escuta mudanças na lista de rotas para redesenhar a tela
     _mapService.routes.addListener(_onRoutesChanged);
   }
 
@@ -49,7 +48,6 @@ class _TelaRotasState extends State<TelaRotas> {
           content: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              // Origem
               ListTile(
                 leading: const Icon(Icons.trip_origin, color: Colors.green),
                 title: const Text('Origem', style: TextStyle(fontWeight: FontWeight.bold)),
@@ -57,8 +55,6 @@ class _TelaRotasState extends State<TelaRotas> {
                 dense: true,
                 contentPadding: EdgeInsets.zero,
               ),
-
-              // Destino
               ListTile(
                 leading: const Icon(Icons.location_on, color: Colors.red),
                 title: const Text('Destino', style: TextStyle(fontWeight: FontWeight.bold)),
@@ -66,10 +62,7 @@ class _TelaRotasState extends State<TelaRotas> {
                 dense: true,
                 contentPadding: EdgeInsets.zero,
               ),
-
               const Divider(),
-
-              // Tempo estimado
               ListTile(
                 leading: const Icon(Icons.access_time, color: Colors.indigo),
                 title: const Text('Tempo estimado'),
@@ -77,17 +70,13 @@ class _TelaRotasState extends State<TelaRotas> {
                 dense: true,
                 contentPadding: EdgeInsets.zero,
               ),
-
-              // Indicador de dados do mapa
               ListTile(
                 leading: Icon(
                   route.hasGeoData ? Icons.map : Icons.map_outlined,
                   color: route.hasGeoData ? Colors.indigo : Colors.grey,
                 ),
                 title: Text(
-                  route.hasGeoData
-                      ? 'Trajeto disponível no mapa'
-                      : 'Sem trajeto no mapa',
+                  route.hasGeoData ? 'Trajeto disponível no mapa' : 'Sem trajeto no mapa',
                 ),
                 dense: true,
                 contentPadding: EdgeInsets.zero,
@@ -96,13 +85,10 @@ class _TelaRotasState extends State<TelaRotas> {
           ),
           actionsAlignment: MainAxisAlignment.spaceAround,
           actions: [
-            // Botão Fechar
             TextButton(
               onPressed: () => Navigator.pop(context),
               child: const Text('Fechar', style: TextStyle(color: Colors.grey)),
             ),
-
-            // Botão Carregar no Mapa (só se tiver dados GeoJSON)
             if (route.hasGeoData)
               ElevatedButton.icon(
                 onPressed: () async {
@@ -145,10 +131,7 @@ class _TelaRotasState extends State<TelaRotas> {
           title: const Text(
             'Nova Rota',
             textAlign: TextAlign.center,
-            style: TextStyle(
-              fontWeight: FontWeight.bold,
-              color: Colors.indigo,
-            ),
+            style: TextStyle(fontWeight: FontWeight.bold, color: Colors.indigo),
           ),
           content: SingleChildScrollView(
             child: Column(
@@ -200,7 +183,6 @@ class _TelaRotasState extends State<TelaRotas> {
             ),
             ElevatedButton.icon(
               onPressed: () {
-                // Validação simples
                 if (nomeController.text.isEmpty ||
                     origemController.text.isEmpty ||
                     destinoController.text.isEmpty ||
@@ -262,41 +244,127 @@ class _TelaRotasState extends State<TelaRotas> {
     );
   }
 
-  // ── Pop-up: Confirmar Exclusão ─────────────────────────────────────────
-  void _confirmarExclusaoRota(BuildContext context, RouteInfo route) {
+  // ── Pop-up: Editar Rota ────────────────────────────────────────────────
+  void _mostrarDialogoEditarRota(BuildContext context, RouteInfo route) {
+    final nomeController = TextEditingController(text: route.name);
+    final origemController = TextEditingController(text: route.origin);
+    final destinoController = TextEditingController(text: route.destination);
+    final tempoController = TextEditingController(text: route.estimatedTime);
+
     showDialog(
       context: context,
       builder: (context) {
         return AlertDialog(
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
           title: const Text(
-            'Excluir Rota',
-            style: TextStyle(fontWeight: FontWeight.bold, color: Colors.red),
+            'Editar Rota',
+            textAlign: TextAlign.center,
+            style: TextStyle(fontWeight: FontWeight.bold, color: Colors.indigo),
           ),
-          content: Text('Tem certeza que deseja excluir a rota "${route.name}"?'),
+          content: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                TextField(
+                  controller: nomeController,
+                  decoration: const InputDecoration(
+                    labelText: 'Nome da rota',
+                    prefixIcon: Icon(Icons.directions_bus),
+                    border: OutlineInputBorder(),
+                  ),
+                ),
+                const SizedBox(height: 12),
+                TextField(
+                  controller: origemController,
+                  decoration: const InputDecoration(
+                    labelText: 'De onde sai? (Origem)',
+                    prefixIcon: Icon(Icons.trip_origin, color: Colors.green),
+                    border: OutlineInputBorder(),
+                  ),
+                ),
+                const SizedBox(height: 12),
+                TextField(
+                  controller: destinoController,
+                  decoration: const InputDecoration(
+                    labelText: 'Para onde vai? (Destino)',
+                    prefixIcon: Icon(Icons.location_on, color: Colors.red),
+                    border: OutlineInputBorder(),
+                  ),
+                ),
+                const SizedBox(height: 12),
+                TextField(
+                  controller: tempoController,
+                  decoration: const InputDecoration(
+                    labelText: 'Tempo estimado (ex: 20 minutos)',
+                    prefixIcon: Icon(Icons.access_time),
+                    border: OutlineInputBorder(),
+                  ),
+                ),
+              ],
+            ),
+          ),
           actionsAlignment: MainAxisAlignment.spaceAround,
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(context),
               child: const Text('Cancelar', style: TextStyle(color: Colors.grey)),
             ),
-            ElevatedButton(
+            ElevatedButton.icon(
               onPressed: () {
-                _mapService.removeRoute(route.id);
+                if (nomeController.text.isEmpty ||
+                    origemController.text.isEmpty ||
+                    destinoController.text.isEmpty ||
+                    tempoController.text.isEmpty) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text('Preencha todos os campos!'),
+                      backgroundColor: Colors.red,
+                    ),
+                  );
+                  return;
+                }
+
+                final nomeDaRota = nomeController.text;
+
+                _mapService.editRoute(
+                  id: route.id,
+                  name: nomeDaRota,
+                  origin: origemController.text,
+                  destination: destinoController.text,
+                  estimatedTime: tempoController.text,
+                );
+
                 Navigator.pop(context);
 
                 ScaffoldMessenger.of(context).showSnackBar(
                   SnackBar(
-                    content: Text('🗑️ Rota "${route.name}" excluída.'),
-                    backgroundColor: Colors.red,
+                    content: Row(
+                      children: [
+                        const Icon(Icons.check_circle, color: Colors.white),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            'Rota "$nomeDaRota" atualizada com sucesso!',
+                            style: const TextStyle(fontWeight: FontWeight.bold),
+                          ),
+                        ),
+                      ],
+                    ),
+                    backgroundColor: Colors.indigo,
+                    duration: const Duration(seconds: 3),
+                    behavior: SnackBarBehavior.floating,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(10),
+                    ),
                   ),
                 );
               },
+              icon: const Icon(Icons.save),
+              label: const Text('Salvar'),
               style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.red,
+                backgroundColor: Colors.indigo,
                 foregroundColor: Colors.white,
               ),
-              child: const Text('Excluir'),
             ),
           ],
         );
@@ -304,14 +372,35 @@ class _TelaRotasState extends State<TelaRotas> {
     );
   }
 
-  // 2. Banner de contador de rotas — fica abaixo do AppBar, cor levemente roxa
+  // ── Exclusão de rota usando CaixaDialogo (utils/componentes.dart) ──────
+  Future<void> _confirmarExclusaoRota(BuildContext context, RouteInfo route) async {
+    final confirmado = await CaixaDialogo.confirmar(
+      context,
+      titulo: 'Excluir Rota',
+      mensagem: 'Tem certeza que deseja excluir a rota "${route.name}"?',
+    );
+
+    if (confirmado == true) {
+      _mapService.removeRoute(route.id);
+
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('🗑️ Rota "${route.name}" excluída.'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
+  }
+
+  // ── Contador de rotas (banner abaixo do AppBar) ────────────────────────
   Widget _buildRouteCounter(int total) {
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 16),
       decoration: const BoxDecoration(
-        // Tom entre roxo e branco, bem próximo do branco (lavanda suave)
-        color: Color(0xFFECEAF8),
+        color: Color(0xFFECEAF8), // lavanda suave — entre roxo e branco
         border: Border(
           bottom: BorderSide(color: Color(0xFFD5D0F0), width: 1),
         ),
@@ -322,13 +411,12 @@ class _TelaRotasState extends State<TelaRotas> {
         style: const TextStyle(
           fontSize: 15,
           fontWeight: FontWeight.bold,
-          color: Color(0xFF3F3D8F), // roxo escuro combinando com o indigo do app
+          color: Color(0xFF3F3D8F),
         ),
       ),
     );
   }
 
-  // 3. Construção da interface da tela de rotas
   @override
   Widget build(BuildContext context) {
     final routesList = _mapService.routes.value;
@@ -357,7 +445,7 @@ class _TelaRotasState extends State<TelaRotas> {
 
                   const SizedBox(height: 20),
 
-                  // Lista dinâmica de rotas usando o componente reutilizável
+                  // Lista usando ItemRota — componente do orientador
                   if (routesList.isEmpty)
                     const Padding(
                       padding: EdgeInsets.symmetric(vertical: 40),
@@ -368,18 +456,20 @@ class _TelaRotasState extends State<TelaRotas> {
                       ),
                     )
                   else
-                    ...routesList.map((route) => RouteListItem(
-                          route: route,
-                          onTap: () => _mostrarDetalhesRota(context, route),
-                          onDelete: () => _confirmarExclusaoRota(context, route),
+                    ...routesList.map((route) => ItemRota(
+                          titulo: route.name,
+                          subtitulo: '${route.origin} → ${route.destination}',
+                          horario: route.estimatedTime,
+                          aoSelecionar: () => _mostrarDetalhesRota(context, route),
+                          aoEditar: () => _mostrarDialogoEditarRota(context, route),
+                          aoRemover: () => _confirmarExclusaoRota(context, route),
                         )),
 
-                  // Espaço extra no final para não ficar atrás do FAB
                   const SizedBox(height: 80),
                 ],
               ),
 
-              // ── Botão Flutuante: Adicionar Rota ────────────────────────
+              // ── FAB: Adicionar Rota ────────────────────────────────────
               Positioned(
                 bottom: 16,
                 right: 16,

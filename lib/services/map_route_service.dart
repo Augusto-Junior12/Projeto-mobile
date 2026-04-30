@@ -137,6 +137,31 @@ class MapRouteService {
     debugPrint('[MapRouteService] Rota "$name" adicionada.');
   }
 
+  /// Edita uma rota existente
+  void editRoute({
+    required String id,
+    required String name,
+    required String origin,
+    required String destination,
+    required String estimatedTime,
+  }) {
+    final updatedList = routes.value.map((r) {
+      if (r.id == id) {
+        return RouteInfo(
+          id: r.id,
+          name: name,
+          origin: origin,
+          destination: destination,
+          estimatedTime: estimatedTime,
+          geoJsonIndex: r.geoJsonIndex,
+        );
+      }
+      return r;
+    }).toList();
+    routes.value = updatedList;
+    debugPrint('[MapRouteService] Rota "$name" editada.');
+  }
+
   /// Remove uma rota pelo ID
   void removeRoute(String routeId) {
     final updated = routes.value.where((r) => r.id != routeId).toList();

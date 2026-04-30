@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:projeto_app/telas/tela_editar_dados.dart';
+import 'package:projeto_app/utils/componentes.dart';
 
+// Tela de perfil — usa CaixaDialogo (utils/componentes.dart) do orientador
 class TelaPerfil extends StatelessWidget {
   const TelaPerfil({super.key});
 
@@ -38,9 +40,7 @@ class TelaPerfil extends StatelessWidget {
                           size: 36,
                         ),
                         onPressed: () {
-                          setState(() {
-                            estrelasSelecionadas = index + 1;
-                          });
+                          setState(() => estrelasSelecionadas = index + 1);
                         },
                       );
                     }),
@@ -77,50 +77,17 @@ class TelaPerfil extends StatelessWidget {
     );
   }
 
-  // ── Pop-up de confirmação de Saída ─────────────────────────────────────
-  void _confirmarSaida(BuildContext context) {
-    showDialog(
-      context: context,
-      builder: (context) {
-        return AlertDialog(
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
-          title: const Text(
-            'Tem certeza?',
-            style: TextStyle(fontWeight: FontWeight.bold, color: Colors.indigo),
-          ),
-          content: const Text('Você deseja realmente sair da sua conta?'),
-          actionsAlignment: MainAxisAlignment.spaceAround,
-          actions: [
-            // Botão Não
-            TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: const Text(
-                'Não',
-                style: TextStyle(color: Colors.grey, fontWeight: FontWeight.bold),
-              ),
-            ),
-            // Botão Sim
-            ElevatedButton(
-              onPressed: () {
-                Navigator.pop(context); // fecha o dialog
-                Navigator.pushReplacementNamed(context, '/'); // volta ao login
-              },
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.indigo,
-                foregroundColor: Colors.white,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(8),
-                ),
-              ),
-              child: const Text(
-                'Sim',
-                style: TextStyle(fontWeight: FontWeight.bold),
-              ),
-            ),
-          ],
-        );
-      },
+  // Confirmação de saída usando CaixaDialogo (utils/componentes.dart)
+  Future<void> _confirmarSaida(BuildContext context) async {
+    final confirmado = await CaixaDialogo.confirmar(
+      context,
+      titulo: 'Tem certeza?',
+      mensagem: 'Você deseja realmente sair da sua conta?',
     );
+
+    if (confirmado == true && context.mounted) {
+      Navigator.pushReplacementNamed(context, '/');
+    }
   }
 
   @override
@@ -132,7 +99,7 @@ class TelaPerfil extends StatelessWidget {
         children: [
           const SizedBox(height: 20),
 
-          // 1. Cabeçalho de Identidade (Foto e Dados Básicos)
+          // Cabeçalho de Identidade
           Center(
             child: Column(
               children: [
@@ -176,8 +143,6 @@ class TelaPerfil extends StatelessWidget {
           const SizedBox(height: 40),
           const Divider(),
 
-          // 2. Lista de Ações (Menu)
-
           // Botão: Editar Dados
           ListTile(
             leading: const Icon(Icons.edit, color: Colors.indigo),
@@ -201,14 +166,14 @@ class TelaPerfil extends StatelessWidget {
           ),
           const Divider(height: 1),
 
-          // Botão: Sair — agora com confirmação
+          // Botão: Sair — usa CaixaDialogo do orientador
           ListTile(
             leading: const Icon(Icons.logout, color: Colors.red),
             title: const Text(
               'Sair',
               style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold),
             ),
-            onTap: () => _confirmarSaida(context), // ← abre o dialog de confirmação
+            onTap: () => _confirmarSaida(context),
           ),
         ],
       ),
