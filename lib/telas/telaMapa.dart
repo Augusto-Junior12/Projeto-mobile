@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_map/flutter_map.dart';
+import 'package:projeto_app/services/map_route_service.dart';
 
 // 1. Criamos a tela do mapa como um StatefulWidget para poder adicionar interatividade no futuro
 class TelaMapa extends StatefulWidget {
@@ -10,8 +12,100 @@ class TelaMapa extends StatefulWidget {
 
 // 2. O estado da tela do mapa, onde vamos construir a interface
 class _TelaMapaState extends State<TelaMapa> {
+  // ── NOVO: referência ao serviço e controlador do mapa ──────────────────
+  final MapRouteService _mapService = MapRouteService();
+  final MapController _mapController = MapController();
+
   @override
-  // 3. Construímos a interface da tela do mapa, com um campo para digitar a localização e um mapa (que por enquanto é só uma imagem de fundo)
+  void initState() {
+    super.initState();
+    // Escuta mudanças de posição e rota para redesenhar o mapa
+    _mapService.userPosition.addListener(_onMapDataChanged);
+    _mapService.activeRoute.addListener(_onMapDataChanged);
+    _mapService.arrivedAtFaculty.addListener(_onArrivalChanged);
+  }
+
+  void _onMapDataChanged() {
+    if (mounted) setState(() {});
+  }
+
+  void _onArrivalChanged() {
+    if (_mapService.arrivedAtFaculty.value && mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('🎓 Você chegou no IFS Campus Lagarto!'),
+          backgroundColor: Colors.green,
+          duration: Duration(seconds: 5),
+        ),
+      );
+    }
+  }
+
+  @override
+  void dispose() {
+    _mapService.userPosition.removeListener(_onMapDataChanged);
+    _mapService.activeRoute.removeListener(_onMapDataChanged);
+    _mapService.arrivedAtFaculty.removeListener(_onArrivalChanged);
+    _mapController.dispose();
+    super.dispose();
+  }
+
+  /// Constrói a lista de marcadores para o mapa
+  List<Marker> _buildMarkers() {
+    final markers = <Marker>[];
+
+    // Marcador da faculdade
+    markers.add(
+      Marker(
+        point: MapRouteService.facultyPosition,
+        width: 48,
+        height: 48,
+        child: const Tooltip(
+          message: 'IFS Campus Lagarto',
+          child: Icon(Icons.school, color: Colors.indigo, size: 40),
+        ),
+      ),
+    );
+
+    // Marcador do usuário
+    final userPos = _mapService.userPosition.value;
+    if (userPos != null) {
+      markers.add(
+        Marker(
+          point: userPos,
+          width: 48,
+          height: 48,
+          child: const Tooltip(
+            message: 'Você está aqui',
+            child: Icon(Icons.my_location, color: Colors.blue, size: 36),
+          ),
+        ),
+      );
+    }
+
+    // Marcador de origem da rota ativa (ponto de partida)
+    final route = _mapService.activeRoute.value;
+    if (route.isNotEmpty) {
+      final originPoint = route.first;
+      final routeName = _mapService.activeRouteName.value ?? 'Origem';
+      markers.add(
+        Marker(
+          point: originPoint,
+          width: 48,
+          height: 48,
+          child: Tooltip(
+            message: 'Partida: $routeName',
+            child: const Icon(Icons.directions_bus, color: Colors.green, size: 38),
+          ),
+        ),
+      );
+    }
+
+    return markers;
+  }
+
+  @override
+  // 3. Construímos a interface da tela do mapa, com um campo para digitar a localização e um mapa interativo
   Widget build(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.all(
@@ -71,30 +165,40 @@ class _TelaMapaState extends State<TelaMapa> {
               height: 20,
             ), // Adiciona um espaço entre o campo de texto e o mapa
 
-            // O Mapa
+            // O Mapa (FlutterMap real com tiles OpenStreetMap)
             Expanded(
-              child: Container(
-                decoration: BoxDecoration(
-                  color: Colors.blue[100], // Cor de fundo
-                  borderRadius: BorderRadius.circular(
-                    16,
-                  ), // Deixa as bordas do mapa arredondadas
-                  image: const DecorationImage(
-                    image: NetworkImage(
-                        'https://tile.openstreetmap.org/14/6504/8691.png'), // URL de Aracaju
-                    fit: BoxFit.cover, // Faz a imagem cobrir todo o espaço
-                    opacity: 0.8, // Deixa a imagem um pouco transparente
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(16), // Mantém bordas arredondadas
+                child: FlutterMap(
+                  mapController: _mapController,
+                  options: MapOptions(
+                    initialCenter: MapRouteService.facultyPosition,
+                    initialZoom: 14.0,
                   ),
-                ),
+                  children: [
+                    // Camada de tiles (preparada para cache via HTTP)
+                    TileLayer(
+                      urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+                      userAgentPackageName: 'com.unigo.app',
+                      maxZoom: 19,
+                    ),
 
-                child: const Center(
-                  child: Icon(
-                    Icons.location_on,
-                    size: 48,
-                    color: Colors.indigo, // Cor do ícone
-                  ),
-                ),
+                    // Camada de polilinha (rota ativa)
+                    if (_mapService.activeRoute.value.isNotEmpty)
+                      PolylineLayer(
+                        polylines: [
+                          Polyline(
+                            points: _mapService.activeRoute.value,
+                            strokeWidth: 5.0,
+                            color: Colors.indigo,
+                          ),
+                        ],
+                      ),
 
+                    // Camada de marcadores (faculdade + usuário)
+                    MarkerLayer(markers: _buildMarkers()),
+                  ],
+                ),
               ),
             ),
 
