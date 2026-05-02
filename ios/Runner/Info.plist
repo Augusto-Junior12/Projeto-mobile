@@ -66,5 +66,9 @@
 		<string>UIInterfaceOrientationLandscapeLeft</string>
 		<string>UIInterfaceOrientationLandscapeRight</string>
 	</array>
+	<key>NSLocationWhenInUseUsageDescription</key>
+	<string>UniGo precisa da sua localização para mostrar sua posição no mapa e verificar a chegada à faculdade.</string>
+	<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
+	<string>UniGo precisa da sua localização em segundo plano para monitorar a chegada à faculdade.</string>
 </dict>
 </plist>

@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:projeto_app/services/map_route_service.dart';
 import 'package:projeto_app/components/item_rota.dart';
-import 'package:projeto_app/utils/componentes.dart'; 
+import 'package:projeto_app/utils/componentes.dart';
 
+// Tela de rotas — usa ItemRota (component) e CaixaDialogo (utils) do orientador
 class TelaRotas extends StatefulWidget {
   const TelaRotas({super.key});
 
@@ -10,209 +12,479 @@ class TelaRotas extends StatefulWidget {
 }
 
 class _TelaRotasState extends State<TelaRotas> {
-  // Array de dados
-  final List<Map<String, dynamic>> _listaRotas = [
-    {
-      'id': '1',
-      'titulo': 'Centro',
-      'subtitulo': 'Centro -> Ifs',
-      'horario': '07:30',
-    },
-    {
-      'id': '2',
-      'titulo': 'Sul',
-      'subtitulo': 'Sul -> Ifs',
-      'horario': '08:00',
-    },
-  ];
+  final MapRouteService _mapService = MapRouteService();
 
-  // Função para abrir o formulário
-  void _mostrarFormulario({Map<String, dynamic>? rotaAtual, int? index}) {
-    final bool isEdicao = rotaAtual != null;
-    
-    String origemInicial = '';
-    String destinoInicial = '';
-    
-    if (isEdicao) {
-      // Divide a string pelo separador " -> "
-      List<String> partes = rotaAtual['subtitulo'].split(' -> ');
-      origemInicial = partes.isNotEmpty ? partes[0] : '';
-      destinoInicial = partes.length > 1 ? partes[1] : '';
-    }
+  @override
+  void initState() {
+    super.initState();
+    _mapService.routes.addListener(_onRoutesChanged);
+  }
 
-    final _tituloController = TextEditingController(text: isEdicao ? rotaAtual['titulo'] : '');
-    final _origemController = TextEditingController(text: origemInicial);
-    final _destinoController = TextEditingController(text: destinoInicial);
-    final _horarioController = TextEditingController(text: isEdicao ? rotaAtual['horario'] : '');
+  void _onRoutesChanged() {
+    if (mounted) setState(() {});
+  }
 
-    final _formKey = GlobalKey<FormState>();
+  @override
+  void dispose() {
+    _mapService.routes.removeListener(_onRoutesChanged);
+    super.dispose();
+  }
 
-    showModalBottomSheet(
+  // ── Pop-up: Detalhes da Rota ───────────────────────────────────────────
+  void _mostrarDetalhesRota(BuildContext context, RouteInfo route) {
+    showDialog(
       context: context,
-      isScrollControlled: true, 
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
       builder: (context) {
-        return Padding(
-          padding: EdgeInsets.only(
-            bottom: MediaQuery.of(context).viewInsets.bottom,
-            left: 20, right: 20, top: 20,
-          ),
-          child: Form(
-            key: _formKey, // Validação de formulário
-            child: SingleChildScrollView(
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text(
-                    isEdicao ? "Editar Rota" : "Nova Rota",
-                    style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: Colors.indigo),
-                  ),
-                  const SizedBox(height: 20),
-                  TextFormField(
-                    controller: _tituloController,
-                    decoration: const InputDecoration(labelText: 'Nome da Rota (ex: Linha Norte)', border: OutlineInputBorder()),
-                    validator: (v) => v!.isEmpty ? 'Informe o nome da rota' : null,
-                  ),
-                  const SizedBox(height: 15),
-                  
-                  TextFormField(
-                    controller: _origemController,
-                    decoration: const InputDecoration(labelText: 'Local de Saída', border: OutlineInputBorder(), prefixIcon: Icon(Icons.location_on_outlined)),
-                    validator: (v) => v!.isEmpty ? 'Informe a origem' : null,
-                  ),
-                  const SizedBox(height: 15),
-                  
-                  TextFormField(
-                    controller: _destinoController,
-                    decoration: const InputDecoration(labelText: 'Local de Chegada', border: OutlineInputBorder(), prefixIcon: Icon(Icons.flag_outlined)),
-                    validator: (v) => v!.isEmpty ? 'Informe o destino' : null,
-                  ),
-                  const SizedBox(height: 15),
-                  
-                  TextFormField(
-                    controller: _horarioController,
-                    decoration: const InputDecoration(labelText: 'Horário previsto', border: OutlineInputBorder(), prefixIcon: Icon(Icons.access_time)),
-                    validator: (v) => v!.isEmpty ? 'Informe o horário' : null,
-                  ),
-                  const SizedBox(height: 20),
-                  SizedBox(
-                    width: double.infinity,
-                    height: 50,
-                    child: ElevatedButton(
-                      style: ElevatedButton.styleFrom(backgroundColor: Colors.indigo, foregroundColor: Colors.white),
-                      onPressed: () {
-                        if (_formKey.currentState!.validate()) {
-                          setState(() {
-                            // Concatenamos origem e destino para salvar como subtitulo
-                            String trajetoCompleto = "${_origemController.text} -> ${_destinoController.text}";
-
-                            if (isEdicao) {
-                              _listaRotas[index!] = {
-                                'id': rotaAtual['id'],
-                                'titulo': _tituloController.text,
-                                'subtitulo': trajetoCompleto,
-                                'horario': _horarioController.text,
-                              };
-                            } else {
-                              _listaRotas.add({
-                                'id': DateTime.now().toString(),
-                                'titulo': _tituloController.text,
-                                'subtitulo': trajetoCompleto,
-                                'horario': _horarioController.text,
-                              });
-                            }
-                          });
-                          
-                          Navigator.pop(context); 
-                          
-                          // Notificação de sucesso
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(
-                              content: Text(isEdicao ? "Rota atualizada!" : "Rota cadastrada com sucesso!"),
-                              backgroundColor: Colors.green,
-                            ),
-                          );
-                        }
-                      },
-                      child: Text(isEdicao ? "Salvar Alterações" : "Adicionar Rota"),
-                    ),
-                  ),
-                  const SizedBox(height: 20),
-                ],
-              ),
+        return AlertDialog(
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
+          title: Text(
+            route.name,
+            textAlign: TextAlign.center,
+            style: const TextStyle(
+              fontWeight: FontWeight.bold,
+              color: Colors.indigo,
             ),
           ),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              ListTile(
+                leading: const Icon(Icons.trip_origin, color: Colors.green),
+                title: const Text('Origem', style: TextStyle(fontWeight: FontWeight.bold)),
+                subtitle: Text(route.origin),
+                dense: true,
+                contentPadding: EdgeInsets.zero,
+              ),
+              ListTile(
+                leading: const Icon(Icons.location_on, color: Colors.red),
+                title: const Text('Destino', style: TextStyle(fontWeight: FontWeight.bold)),
+                subtitle: Text(route.destination),
+                dense: true,
+                contentPadding: EdgeInsets.zero,
+              ),
+              const Divider(),
+              ListTile(
+                leading: const Icon(Icons.access_time, color: Colors.indigo),
+                title: const Text('Tempo estimado'),
+                subtitle: Text(route.estimatedTime),
+                dense: true,
+                contentPadding: EdgeInsets.zero,
+              ),
+              ListTile(
+                leading: Icon(
+                  route.hasGeoData ? Icons.map : Icons.map_outlined,
+                  color: route.hasGeoData ? Colors.indigo : Colors.grey,
+                ),
+                title: Text(
+                  route.hasGeoData ? 'Trajeto disponível no mapa' : 'Sem trajeto no mapa',
+                ),
+                dense: true,
+                contentPadding: EdgeInsets.zero,
+              ),
+            ],
+          ),
+          actionsAlignment: MainAxisAlignment.spaceAround,
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('Fechar', style: TextStyle(color: Colors.grey)),
+            ),
+            if (route.hasGeoData)
+              ElevatedButton.icon(
+                onPressed: () async {
+                  Navigator.pop(context);
+                  await _mapService.loadRoute(route.geoJsonIndex!, route.name);
+                  if (context.mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text('🚌 ${route.name} carregada! Vá ao Mapa para visualizar.'),
+                        backgroundColor: Colors.indigo,
+                      ),
+                    );
+                  }
+                },
+                icon: const Icon(Icons.map),
+                label: const Text('Carregar no Mapa'),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.indigo,
+                  foregroundColor: Colors.white,
+                ),
+              ),
+          ],
         );
       },
     );
   }
 
-  // Remoção com confirmação
-  void _deletarRota(int index) async {
-    bool? confirmou = await CaixaDialogo.confirmar(
+  // ── Pop-up: Adicionar Nova Rota ────────────────────────────────────────
+  void _mostrarDialogoAdicionarRota(BuildContext context) {
+    final nomeController = TextEditingController();
+    final origemController = TextEditingController();
+    final destinoController = TextEditingController();
+    final tempoController = TextEditingController();
+
+    showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
+          title: const Text(
+            'Nova Rota',
+            textAlign: TextAlign.center,
+            style: TextStyle(fontWeight: FontWeight.bold, color: Colors.indigo),
+          ),
+          content: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                TextField(
+                  controller: nomeController,
+                  decoration: const InputDecoration(
+                    labelText: 'Nome da rota',
+                    prefixIcon: Icon(Icons.directions_bus),
+                    border: OutlineInputBorder(),
+                  ),
+                ),
+                const SizedBox(height: 12),
+                TextField(
+                  controller: origemController,
+                  decoration: const InputDecoration(
+                    labelText: 'De onde sai? (Origem)',
+                    prefixIcon: Icon(Icons.trip_origin, color: Colors.green),
+                    border: OutlineInputBorder(),
+                  ),
+                ),
+                const SizedBox(height: 12),
+                TextField(
+                  controller: destinoController,
+                  decoration: const InputDecoration(
+                    labelText: 'Para onde vai? (Destino)',
+                    prefixIcon: Icon(Icons.location_on, color: Colors.red),
+                    border: OutlineInputBorder(),
+                  ),
+                ),
+                const SizedBox(height: 12),
+                TextField(
+                  controller: tempoController,
+                  decoration: const InputDecoration(
+                    labelText: 'Tempo estimado (ex: 20 minutos)',
+                    prefixIcon: Icon(Icons.access_time),
+                    border: OutlineInputBorder(),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          actionsAlignment: MainAxisAlignment.spaceAround,
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('Cancelar', style: TextStyle(color: Colors.grey)),
+            ),
+            ElevatedButton.icon(
+              onPressed: () {
+                if (nomeController.text.isEmpty ||
+                    origemController.text.isEmpty ||
+                    destinoController.text.isEmpty ||
+                    tempoController.text.isEmpty) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text('Preencha todos os campos!'),
+                      backgroundColor: Colors.red,
+                    ),
+                  );
+                  return;
+                }
+
+                final nomeDaRota = nomeController.text;
+
+                _mapService.addRoute(
+                  name: nomeDaRota,
+                  origin: origemController.text,
+                  destination: destinoController.text,
+                  estimatedTime: tempoController.text,
+                );
+
+                Navigator.pop(context);
+
+                // ✅ Snackbar de confirmação ao cadastrar nova rota
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Row(
+                      children: [
+                        const Icon(Icons.check_circle, color: Colors.white),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            'Rota "$nomeDaRota" cadastrada com sucesso!',
+                            style: const TextStyle(fontWeight: FontWeight.bold),
+                          ),
+                        ),
+                      ],
+                    ),
+                    backgroundColor: Colors.green.shade700,
+                    duration: const Duration(seconds: 3),
+                    behavior: SnackBarBehavior.floating,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                  ),
+                );
+              },
+              icon: const Icon(Icons.add),
+              label: const Text('Adicionar'),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.indigo,
+                foregroundColor: Colors.white,
+              ),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  // ── Pop-up: Editar Rota ────────────────────────────────────────────────
+  void _mostrarDialogoEditarRota(BuildContext context, RouteInfo route) {
+    final nomeController = TextEditingController(text: route.name);
+    final origemController = TextEditingController(text: route.origin);
+    final destinoController = TextEditingController(text: route.destination);
+    final tempoController = TextEditingController(text: route.estimatedTime);
+
+    showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
+          title: const Text(
+            'Editar Rota',
+            textAlign: TextAlign.center,
+            style: TextStyle(fontWeight: FontWeight.bold, color: Colors.indigo),
+          ),
+          content: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                TextField(
+                  controller: nomeController,
+                  decoration: const InputDecoration(
+                    labelText: 'Nome da rota',
+                    prefixIcon: Icon(Icons.directions_bus),
+                    border: OutlineInputBorder(),
+                  ),
+                ),
+                const SizedBox(height: 12),
+                TextField(
+                  controller: origemController,
+                  decoration: const InputDecoration(
+                    labelText: 'De onde sai? (Origem)',
+                    prefixIcon: Icon(Icons.trip_origin, color: Colors.green),
+                    border: OutlineInputBorder(),
+                  ),
+                ),
+                const SizedBox(height: 12),
+                TextField(
+                  controller: destinoController,
+                  decoration: const InputDecoration(
+                    labelText: 'Para onde vai? (Destino)',
+                    prefixIcon: Icon(Icons.location_on, color: Colors.red),
+                    border: OutlineInputBorder(),
+                  ),
+                ),
+                const SizedBox(height: 12),
+                TextField(
+                  controller: tempoController,
+                  decoration: const InputDecoration(
+                    labelText: 'Tempo estimado (ex: 20 minutos)',
+                    prefixIcon: Icon(Icons.access_time),
+                    border: OutlineInputBorder(),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          actionsAlignment: MainAxisAlignment.spaceAround,
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('Cancelar', style: TextStyle(color: Colors.grey)),
+            ),
+            ElevatedButton.icon(
+              onPressed: () {
+                if (nomeController.text.isEmpty ||
+                    origemController.text.isEmpty ||
+                    destinoController.text.isEmpty ||
+                    tempoController.text.isEmpty) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text('Preencha todos os campos!'),
+                      backgroundColor: Colors.red,
+                    ),
+                  );
+                  return;
+                }
+
+                final nomeDaRota = nomeController.text;
+
+                _mapService.editRoute(
+                  id: route.id,
+                  name: nomeDaRota,
+                  origin: origemController.text,
+                  destination: destinoController.text,
+                  estimatedTime: tempoController.text,
+                );
+
+                Navigator.pop(context);
+
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Row(
+                      children: [
+                        const Icon(Icons.check_circle, color: Colors.white),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            'Rota "$nomeDaRota" atualizada com sucesso!',
+                            style: const TextStyle(fontWeight: FontWeight.bold),
+                          ),
+                        ),
+                      ],
+                    ),
+                    backgroundColor: Colors.indigo,
+                    duration: const Duration(seconds: 3),
+                    behavior: SnackBarBehavior.floating,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                  ),
+                );
+              },
+              icon: const Icon(Icons.save),
+              label: const Text('Salvar'),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.indigo,
+                foregroundColor: Colors.white,
+              ),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  // ── Exclusão de rota usando CaixaDialogo (utils/componentes.dart) ──────
+  Future<void> _confirmarExclusaoRota(BuildContext context, RouteInfo route) async {
+    final confirmado = await CaixaDialogo.confirmar(
       context,
-      titulo: "Excluir Rota",
-      mensagem: "Tem certeza que deseja remover esta rota?",
+      titulo: 'Excluir Rota',
+      mensagem: 'Tem certeza que deseja excluir a rota "${route.name}"?',
     );
 
-    if (confirmou == true) {
-      setState(() {
-        _listaRotas.removeAt(index);
-      });
-      if (mounted) {
+    if (confirmado == true) {
+      _mapService.removeRoute(route.id);
+
+      if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text("Rota removida com sucesso!"), backgroundColor: Colors.red),
+          SnackBar(
+            content: Text('🗑️ Rota "${route.name}" excluída.'),
+            backgroundColor: Colors.red,
+          ),
         );
       }
     }
   }
 
+  // ── Contador de rotas (banner abaixo do AppBar) ────────────────────────
+  Widget _buildRouteCounter(int total) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 16),
+      decoration: const BoxDecoration(
+        color: Color(0xFFECEAF8), // lavanda suave — entre roxo e branco
+        border: Border(
+          bottom: BorderSide(color: Color(0xFFD5D0F0), width: 1),
+        ),
+      ),
+      child: Text(
+        'Total de rotas ativas: $total',
+        textAlign: TextAlign.center,
+        style: const TextStyle(
+          fontSize: 15,
+          fontWeight: FontWeight.bold,
+          color: Color(0xFF3F3D8F),
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      body: Column(
-        children: [
-          // Contador de itens
-          Container(
-            width: double.infinity,
-            padding: const EdgeInsets.symmetric(vertical: 12.0),
-            color: Colors.indigo.withValues(alpha: 0.1),
-            child: Text(
-              'Total de rotas ativas: ${_listaRotas.length}',
-              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.indigo),
-              textAlign: TextAlign.center,
-            ),
-          ),
-          
-          Expanded(
-            child: _listaRotas.isEmpty
-                ? const Center(child: Text("Nenhuma rota cadastrada."))
-                : ListView.builder(
-                    padding: const EdgeInsets.all(16.0),
-                    itemCount: _listaRotas.length,
-                    itemBuilder: (context, index) {
-                      final rota = _listaRotas[index];
-                      return ItemRota(
-                        titulo: rota['titulo'],
-                        subtitulo: rota['subtitulo'],
-                        horario: rota['horario'],
-                        aoEditar: () => _mostrarFormulario(rotaAtual: rota, index: index),
-                        aoRemover: () => _deletarRota(index),
-                      );
-                    },
+    final routesList = _mapService.routes.value;
+
+    return Column(
+      children: [
+        // ── Contador de rotas logo abaixo do AppBar ─────────────────────
+        _buildRouteCounter(routesList.length),
+
+        // ── Lista de rotas + FAB ─────────────────────────────────────────
+        Expanded(
+          child: Stack(
+            children: [
+              ListView(
+                padding: const EdgeInsets.all(16.0),
+                children: [
+                  const Text(
+                    'Rotas Disponíveis',
+                    style: TextStyle(
+                      fontSize: 24,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.indigo,
+                    ),
+                    textAlign: TextAlign.center,
                   ),
+
+                  const SizedBox(height: 20),
+
+                  // Lista usando ItemRota — componente do orientador
+                  if (routesList.isEmpty)
+                    const Padding(
+                      padding: EdgeInsets.symmetric(vertical: 40),
+                      child: Text(
+                        'Nenhuma rota cadastrada.\nToque no botão + para adicionar.',
+                        textAlign: TextAlign.center,
+                        style: TextStyle(color: Colors.grey, fontSize: 16),
+                      ),
+                    )
+                  else
+                    ...routesList.map((route) => ItemRota(
+                          titulo: route.name,
+                          subtitulo: '${route.origin} → ${route.destination}',
+                          horario: route.estimatedTime,
+                          aoSelecionar: () => _mostrarDetalhesRota(context, route),
+                          aoEditar: () => _mostrarDialogoEditarRota(context, route),
+                          aoRemover: () => _confirmarExclusaoRota(context, route),
+                        )),
+
+                  const SizedBox(height: 80),
+                ],
+              ),
+
+              // ── FAB: Adicionar Rota ────────────────────────────────────
+              Positioned(
+                bottom: 16,
+                right: 16,
+                child: FloatingActionButton(
+                  onPressed: () => _mostrarDialogoAdicionarRota(context),
+                  backgroundColor: Colors.indigo,
+                  foregroundColor: Colors.white,
+                  tooltip: 'Adicionar nova rota',
+                  child: const Icon(Icons.add),
+                ),
+              ),
+            ],
           ),
-        ],
-      ),
-      
-      floatingActionButton: FloatingActionButton(
-        onPressed: () => _mostrarFormulario(), 
-        backgroundColor: Colors.indigo,
-        foregroundColor: Colors.white,
-        child: const Icon(Icons.add),
-      ),
+        ),
+      ],
     );
   }
 }

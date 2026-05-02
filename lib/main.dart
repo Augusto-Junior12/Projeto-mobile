@@ -1,7 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:projeto_app/telas/tela_login.dart';
+import 'package:projeto_app/services/notification_service.dart';
+import 'package:projeto_app/services/map_route_service.dart';
 
-void main() {
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+
+  // Inicializa os serviços Singleton antes de rodar o app
+  await NotificationService().init();
+  await MapRouteService().init();
+
   runApp(const MyApp());
 }
 
@@ -13,11 +21,18 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Flutter Demo',
+      title: 'UniGo',
+      debugShowCheckedModeBanner: false,
       theme: ThemeData(
-        primarySwatch: Colors.blue,
+        primarySwatch: Colors.indigo,
+        colorScheme: ColorScheme.fromSeed(seedColor: Colors.indigo),
+        useMaterial3: true,
       ),
-      home: const Telalogin(),
+      // Rota inicial e rota nomeada '/' para suportar logout via pushReplacementNamed
+      initialRoute: '/',
+      routes: {
+        '/': (context) => const Telalogin(),
+      },
     );
   }
 }

@@ -6,6 +6,7 @@ class ItemRota extends StatelessWidget {
   final String titulo;
   final String subtitulo;
   final String horario;
+  final VoidCallback aoSelecionar;
   final VoidCallback aoEditar;
   final VoidCallback aoRemover;
 
@@ -14,6 +15,7 @@ class ItemRota extends StatelessWidget {
     required this.titulo,
     required this.subtitulo,
     required this.horario,
+    required this.aoSelecionar,
     required this.aoEditar,
     required this.aoRemover,
   });
@@ -25,6 +27,7 @@ class ItemRota extends StatelessWidget {
       margin: const EdgeInsets.only(bottom: 12.0),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
       child: ListTile(
+        onTap: aoSelecionar,
         contentPadding: const EdgeInsets.all(16.0),
         leading: Container(
           padding: const EdgeInsets.all(10),
