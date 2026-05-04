@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:projeto_app/utils/validadores.dart';
 
 // Tela de recuperação de senha, onde o usuário pode digitar seu e-mail para receber um link de redefinição de senha
 class TelaEsqueciSenha extends StatefulWidget {
@@ -11,19 +12,22 @@ class TelaEsqueciSenha extends StatefulWidget {
 // A tela de recuperação de senha é simples, com um campo para o usuário digitar seu e-mail e um botão para enviar o link de recuperação
 class _TelaEsqueciSenhaState extends State<TelaEsqueciSenha> {
 
+  final _formKey = GlobalKey<FormState>();
   final TextEditingController _emailController = TextEditingController();
 
   void _recuperarSenha() {
-    // Aqui depois você pode integrar com Firebase ou API, mas por enquanto só vamos mostrar uma mensagem de sucesso e voltar para a tela de login
+    if (_formKey.currentState!.validate()) {
+      // Aqui depois você pode integrar com Firebase ou API, mas por enquanto só vamos mostrar uma mensagem de sucesso e voltar para a tela de login
 
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text("Link de recuperação enviado para o e-mail!"),
-        backgroundColor: Colors.green,
-      ),
-    );
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text("Link de recuperação enviado para o e-mail!"),
+          backgroundColor: Colors.green,
+        ),
+      );
 
-    Navigator.pop(context); // volta para o login
+      Navigator.pop(context); // volta para o login
+    }
   }
 
   // Construímos a interface da tela de recuperação de senha, com um campo para o e-mail e um botão para enviar
@@ -47,8 +51,10 @@ class _TelaEsqueciSenhaState extends State<TelaEsqueciSenha> {
       body: Padding(
         padding: const EdgeInsets.all(20.0),
 
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
+        child: Form(
+          key: _formKey,
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
           children: [
 
             // Título da tela
@@ -73,11 +79,17 @@ class _TelaEsqueciSenhaState extends State<TelaEsqueciSenha> {
             const SizedBox(height: 30),
 
             // Campo de e-mail
-            TextField(
+            TextFormField(
               controller: _emailController,
-              decoration: const InputDecoration(
-                labelText: "E-mail",
-                border: OutlineInputBorder(),
+              keyboardType: TextInputType.emailAddress,
+              validator: Validadores.validarEmail,
+              decoration: InputDecoration(
+                labelText: 'E-mail',
+                hintText: 'exemplo@email.com',
+                prefixIcon: const Icon(Icons.email_outlined),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(10),
+                ),
               ),
             ),
 
@@ -93,6 +105,7 @@ class _TelaEsqueciSenhaState extends State<TelaEsqueciSenha> {
             ),
 
           ],
+          ),
         ),
       ),
     );
