@@ -1,20 +1,17 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
-import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 import 'package:projeto_app/telas/tela_login.dart';
 import 'package:projeto_app/services/notification_service.dart';
 import 'package:projeto_app/services/map_route_service.dart';
-
+import 'package:firebase_core/firebase_core.dart';
+import 'package:projeto_app/firebase_options.dart';
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  // Inicializa a FFI para SQLite em sistemas desktop (Windows/Linux)
-  if (Platform.isWindows || Platform.isLinux) {
-    sqfliteFfiInit();
-    databaseFactory = databaseFactoryFfi;
-  }
+  await Firebase.initializeApp(                             // ← ADICIONAR
+    options: DefaultFirebaseOptions.currentPlatform,
+  );
 
-  // Inicializa os serviços Singleton antes de rodar o app
   await NotificationService().init();
   await MapRouteService().init();
 
@@ -22,9 +19,7 @@ void main() async {
 }
 
 class MyApp extends StatelessWidget {
-  const MyApp({super.key
-
-});
+  const MyApp({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -38,9 +33,7 @@ class MyApp extends StatelessWidget {
       ),
       // Rota inicial e rota nomeada '/' para suportar logout via pushReplacementNamed
       initialRoute: '/',
-      routes: {
-        '/': (context) => const Telalogin(),
-      },
+      routes: {'/': (context) => const Telalogin()},
     );
   }
 }

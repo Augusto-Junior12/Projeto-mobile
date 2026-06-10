@@ -3,10 +3,11 @@ import 'package:projeto_app/telas/tela_home.dart';
 import 'package:projeto_app/telas/tela_esqueci_senha.dart';
 import 'package:projeto_app/telas/tela_cadastro.dart';
 import 'package:projeto_app/utils/validadores.dart';
-import 'package:projeto_app/repositories/usuario_repository.dart';
 import 'package:projeto_app/models/usuario_model.dart';
+import 'package:projeto_app/repositories/usuario_repository.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
-// Tela de login — autentica o usuário consultando o SQLite via UsuarioRepository
+// Tela de login — autentica o usuário via Firebase Auth e busca o perfil no Firestore
 class Telalogin extends StatefulWidget {
   const Telalogin({super.key});
 
@@ -24,7 +25,7 @@ class _TelaloginState extends State<Telalogin> {
   bool _carregando = false;
   String? _erroBanco;
 
-  // Realiza o login consultando o banco de dados
+  // Realiza o login via Firebase Auth
   Future<void> _entrar() async {
     if (!_formKey.currentState!.validate()) return;
 
@@ -49,11 +50,15 @@ class _TelaloginState extends State<Telalogin> {
             builder: (context) => TelaHome(usuarioLogado: usuario),
           ),
         );
-      } else {
+      }
+    } on FirebaseAuthException catch (e) {
+      if (e.code == 'user-not-found' || e.code == 'wrong-password') {
         setState(() => _erroBanco = 'E-mail ou senha incorretos.');
+      } else {
+        setState(() => _erroBanco = 'Erro ao fazer login. Tente novamente.');
       }
     } catch (e) {
-      setState(() => _erroBanco = 'Erro ao acessar o banco de dados.');
+      setState(() => _erroBanco = 'Erro ao fazer login. Tente novamente.');
     } finally {
       if (mounted) setState(() => _carregando = false);
     }
@@ -70,7 +75,10 @@ class _TelaloginState extends State<Telalogin> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('UniGo', style: TextStyle(fontWeight: FontWeight.bold)),
+        title: const Text(
+          'UniGo',
+          style: TextStyle(fontWeight: FontWeight.bold),
+        ),
         centerTitle: true,
         backgroundColor: Colors.indigo,
         foregroundColor: Colors.white,
@@ -123,8 +131,11 @@ class _TelaloginState extends State<Telalogin> {
                     labelText: 'Senha',
                     prefixIcon: const Icon(Icons.lock_outline),
                     suffixIcon: IconButton(
-                      icon: Icon(_senhaVisivel ? Icons.visibility_off : Icons.visibility),
-                      onPressed: () => setState(() => _senhaVisivel = !_senhaVisivel),
+                      icon: Icon(
+                        _senhaVisivel ? Icons.visibility_off : Icons.visibility,
+                      ),
+                      onPressed: () =>
+                          setState(() => _senhaVisivel = !_senhaVisivel),
                     ),
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(10),
@@ -132,7 +143,7 @@ class _TelaloginState extends State<Telalogin> {
                   ),
                 ),
 
-                // Mensagem de erro do banco
+                // Mensagem de erro
                 if (_erroBanco != null) ...[
                   const SizedBox(height: 10),
                   Text(
@@ -149,7 +160,9 @@ class _TelaloginState extends State<Telalogin> {
                     onPressed: () {
                       Navigator.push(
                         context,
-                        MaterialPageRoute(builder: (context) => const TelaEsqueciSenha()),
+                        MaterialPageRoute(
+                          builder: (context) => const TelaEsqueciSenha(),
+                        ),
                       );
                     },
                     child: const Text("Esqueci minha senha"),
@@ -181,7 +194,10 @@ class _TelaloginState extends State<Telalogin> {
                           )
                         : const Text(
                             "Entrar",
-                            style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold,
+                            ),
                           ),
                   ),
                 ),
@@ -192,7 +208,9 @@ class _TelaloginState extends State<Telalogin> {
                   onPressed: () {
                     Navigator.push(
                       context,
-                      MaterialPageRoute(builder: (context) => const TelaCadastro()),
+                      MaterialPageRoute(
+                        builder: (context) => const TelaCadastro(),
+                      ),
                     );
                   },
                   child: const Text("Não tem conta? Cadastre-se"),

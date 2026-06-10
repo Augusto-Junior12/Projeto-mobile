@@ -6,7 +6,7 @@ import 'package:projeto_app/telas/tela_editar_dados.dart';
 import 'package:projeto_app/utils/componentes.dart';
 import 'package:projeto_app/repositories/usuario_repository.dart';
 
-// TelaPerfil — exibe os dados reais do usuário logado vindos do SQLite e gerencia a foto de perfil
+// TelaPerfil — exibe os dados reais do usuário logado vindos do Firestore e gerencia a foto de perfil
 class TelaPerfil extends StatefulWidget {
   final UsuarioModel usuarioLogado;
 
@@ -19,6 +19,7 @@ class TelaPerfil extends StatefulWidget {
 class _TelaPerfilState extends State<TelaPerfil> {
   // Mantém a referência local para atualizar após edição
   late UsuarioModel _usuario;
+  final UsuarioRepository _repository = UsuarioRepository();
 
   @override
   void initState() {
@@ -40,8 +41,8 @@ class _TelaPerfilState extends State<TelaPerfil> {
         // Cria a cópia com a nova foto de perfil
         final usuarioAtualizado = _usuario.copyWith(fotoPath: caminhoFoto);
 
-        // Atualiza no banco local
-        await UsuarioRepository().atualizar(usuarioAtualizado);
+        // Atualiza no Firestore via repositório
+        await _repository.atualizar(usuarioAtualizado);
 
         setState(() {
           _usuario = usuarioAtualizado;
@@ -95,11 +96,16 @@ class _TelaPerfilState extends State<TelaPerfil> {
         return StatefulBuilder(
           builder: (context, setState) {
             return AlertDialog(
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(15),
+              ),
               title: const Text(
                 'Avaliar UniGo',
                 textAlign: TextAlign.center,
-                style: TextStyle(fontWeight: FontWeight.bold, color: Colors.indigo),
+                style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                  color: Colors.indigo,
+                ),
               ),
               content: Column(
                 mainAxisSize: MainAxisSize.min,
@@ -114,7 +120,9 @@ class _TelaPerfilState extends State<TelaPerfil> {
                     children: List.generate(5, (index) {
                       return IconButton(
                         icon: Icon(
-                          index < estrelasSelecionadas ? Icons.star : Icons.star_border,
+                          index < estrelasSelecionadas
+                              ? Icons.star
+                              : Icons.star_border,
                           color: Colors.amber,
                           size: 36,
                         ),
@@ -130,7 +138,10 @@ class _TelaPerfilState extends State<TelaPerfil> {
               actions: [
                 TextButton(
                   onPressed: () => Navigator.pop(context),
-                  child: const Text('Cancelar', style: TextStyle(color: Colors.grey)),
+                  child: const Text(
+                    'Cancelar',
+                    style: TextStyle(color: Colors.grey),
+                  ),
                 ),
                 ElevatedButton(
                   onPressed: () {
@@ -193,7 +204,7 @@ class _TelaPerfilState extends State<TelaPerfil> {
         children: [
           const SizedBox(height: 20),
 
-          // Cabeçalho de Identidade — dados reais do banco + foto editável
+          // Cabeçalho de Identidade — dados reais do Firestore + foto editável
           Center(
             child: Column(
               children: [
@@ -264,7 +275,11 @@ class _TelaPerfilState extends State<TelaPerfil> {
           ListTile(
             leading: const Icon(Icons.edit, color: Colors.indigo),
             title: const Text('Editar dados'),
-            trailing: const Icon(Icons.arrow_forward_ios, size: 18, color: Colors.grey),
+            trailing: const Icon(
+              Icons.arrow_forward_ios,
+              size: 18,
+              color: Colors.grey,
+            ),
             onTap: () => _irParaEdicao(context),
           ),
           const Divider(height: 1),
@@ -273,7 +288,11 @@ class _TelaPerfilState extends State<TelaPerfil> {
           ListTile(
             leading: const Icon(Icons.star_rate, color: Colors.amber),
             title: const Text('Avaliar app'),
-            trailing: const Icon(Icons.arrow_forward_ios, size: 18, color: Colors.grey),
+            trailing: const Icon(
+              Icons.arrow_forward_ios,
+              size: 18,
+              color: Colors.grey,
+            ),
             onTap: () => _mostrarDialogoAvaliacao(context),
           ),
           const Divider(height: 1),

@@ -1,97 +1,66 @@
-import 'package:projeto_app/database/database_helper.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:projeto_app/models/usuario_model.dart';
 
 // UsuarioRepository — camada de repositório responsável por todas as
-// operações CRUD da tabela 'usuarios'. As telas NÃO acessam o banco diretamente.
+// operações CRUD de usuários. As telas NÃO acessam o Firebase diretamente.
 class UsuarioRepository {
-  final DatabaseHelper _dbHelper = DatabaseHelper.instance;
+  final FirebaseAuth _auth = FirebaseAuth.instance;
+  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
 
   // ── INSERT ──────────────────────────────────────────────────────────────────
-  // Cadastra um novo usuário. Retorna o ID gerado ou lança exceção se o
-  // e-mail/matrícula já existirem (constraint UNIQUE do banco).
-  Future<int> cadastrar(UsuarioModel usuario) async {
-    final db = await _dbHelper.database;
-    return await db.insert(
-      'usuarios',
-      usuario.toMap()..remove('id'), // não passa o id (autoincrement)
+  // Cadastra um novo usuário no Firebase Auth e salva o perfil no Firestore.
+  Future<void> cadastrar(UsuarioModel usuario, String senha) async {
+    final credencial = await _auth.createUserWithEmailAndPassword(
+      email: usuario.email,
+      password: senha,
     );
+    final uid = credencial.user!.uid;
+    await _firestore.collection('usuarios').doc(uid).set({
+      'uid': uid,
+      'nome': usuario.nome,
+      'curso': usuario.curso,
+      'matricula': usuario.matricula,
+      'email': usuario.email,
+      'fotoPath': usuario.fotoPath,
+    });
   }
 
   // ── SELECT: login ────────────────────────────────────────────────────────────
-  // Retorna o usuário que corresponde ao e-mail + senha informados,
-  // ou null se não encontrar (credenciais inválidas).
+  // Autentica via Firebase Auth e busca o perfil no Firestore.
+  // Retorna null se as credenciais forem inválidas.
   Future<UsuarioModel?> login(String email, String senha) async {
-    final db = await _dbHelper.database;
-    final resultado = await db.query(
-      'usuarios',
-      where: 'email = ? AND senha = ?',
-      whereArgs: [email, senha],
-      limit: 1,
+    final credencial = await _auth.signInWithEmailAndPassword(
+      email: email,
+      password: senha,
     );
-    if (resultado.isEmpty) return null;
-    return UsuarioModel.fromMap(resultado.first);
-  }
-
-  // ── SELECT: buscar por ID ────────────────────────────────────────────────────
-  Future<UsuarioModel?> buscarPorId(int id) async {
-    final db = await _dbHelper.database;
-    final resultado = await db.query(
-      'usuarios',
-      where: 'id = ?',
-      whereArgs: [id],
-      limit: 1,
-    );
-    if (resultado.isEmpty) return null;
-    return UsuarioModel.fromMap(resultado.first);
-  }
-
-  // ── SELECT: buscar por e-mail ────────────────────────────────────────────────
-  Future<UsuarioModel?> buscarPorEmail(String email) async {
-    final db = await _dbHelper.database;
-    final resultado = await db.query(
-      'usuarios',
-      where: 'email = ?',
-      whereArgs: [email],
-      limit: 1,
-    );
-    if (resultado.isEmpty) return null;
-    return UsuarioModel.fromMap(resultado.first);
-  }
-
-  // ── SELECT ALL ───────────────────────────────────────────────────────────────
-  Future<List<UsuarioModel>> listarTodos() async {
-    final db = await _dbHelper.database;
-    final resultado = await db.query('usuarios');
-    return resultado.map(UsuarioModel.fromMap).toList();
+    final uid = credencial.user!.uid;
+    final doc = await _firestore.collection('usuarios').doc(uid).get();
+    if (!doc.exists) return null;
+    return UsuarioModel.fromMap(doc.data()!);
   }
 
   // ── UPDATE ───────────────────────────────────────────────────────────────────
-  // Atualiza nome, curso e matrícula do usuário com o id fornecido.
-  // Retorna o número de linhas afetadas (0 = nenhuma linha encontrada).
-  Future<int> atualizar(UsuarioModel usuario) async {
-    final db = await _dbHelper.database;
-    return await db.update(
-      'usuarios',
-      usuario.toMap(),
-      where: 'id = ?',
-      whereArgs: [usuario.id],
-    );
+  // Atualiza os dados do perfil do usuário no Firestore.
+  Future<void> atualizar(UsuarioModel usuario) async {
+    await _firestore
+        .collection('usuarios')
+        .doc(usuario.uid)
+        .update(usuario.toMap());
   }
 
   // ── DELETE ───────────────────────────────────────────────────────────────────
-  Future<int> deletar(int id) async {
-    final db = await _dbHelper.database;
-    return await db.delete(
-      'usuarios',
-      where: 'id = ?',
-      whereArgs: [id],
-    );
+  // Remove o documento do Firestore e a conta do Firebase Auth.
+  Future<void> deletar(String uid) async {
+    await _firestore.collection('usuarios').doc(uid).delete();
+    await _auth.currentUser?.delete();
   }
 
   // ── VERIFICAR e-mail único ───────────────────────────────────────────────────
-  // Retorna true se o e-mail ainda não está cadastrado
+  // fetchSignInMethodsForEmail foi depreciado pelo Firebase por razões de segurança.
+  // A verificação agora é feita pelo próprio Auth ao cadastrar —
+  // ele lança FirebaseAuthException com code 'email-already-in-use'.
   Future<bool> emailDisponivel(String email) async {
-    final usuario = await buscarPorEmail(email);
-    return usuario == null;
+    return true;
   }
 }

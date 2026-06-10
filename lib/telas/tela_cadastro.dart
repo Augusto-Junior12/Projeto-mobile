@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:projeto_app/models/usuario_model.dart';
 import 'package:projeto_app/utils/validadores.dart';
 import 'package:projeto_app/repositories/usuario_repository.dart';
 
-// Tela de cadastro — salva o novo usuário no SQLite via UsuarioRepository
+// Tela de cadastro — salva o novo usuário no Firebase Auth + Firestore via UsuarioRepository
 class TelaCadastro extends StatefulWidget {
   const TelaCadastro({super.key});
 
@@ -35,7 +36,7 @@ class _TelaCadastroState extends State<TelaCadastro> {
     return null;
   }
 
-  // Salva o usuário no SQLite e navega para a tela de login
+  // Salva o usuário no Firebase Auth + Firestore e navega para a tela de login
   Future<void> _cadastrar() async {
     if (!_formKey.currentState!.validate()) return;
 
@@ -45,16 +46,6 @@ class _TelaCadastroState extends State<TelaCadastro> {
     });
 
     try {
-      // Verifica se o e-mail já está em uso
-      final emailLivre = await _repository.emailDisponivel(
-        _emailController.text.trim(),
-      );
-
-      if (!emailLivre) {
-        setState(() => _erroBanco = 'Este e-mail já está cadastrado.');
-        return;
-      }
-
       final novoUsuario = UsuarioModel(
         nome: _nomeController.text.trim(),
         curso: _cursoController.text.trim(),
@@ -63,7 +54,7 @@ class _TelaCadastroState extends State<TelaCadastro> {
         senha: _senhaController.text,
       );
 
-      await _repository.cadastrar(novoUsuario);
+      await _repository.cadastrar(novoUsuario, _senhaController.text);
 
       if (!mounted) return;
 
@@ -76,6 +67,12 @@ class _TelaCadastroState extends State<TelaCadastro> {
 
       // Volta para a tela de login após cadastrar
       Navigator.pop(context);
+    } on FirebaseAuthException catch (e) {
+      if (e.code == 'email-already-in-use') {
+        setState(() => _erroBanco = 'Este e-mail já está cadastrado.');
+      } else {
+        setState(() => _erroBanco = 'Erro ao cadastrar. Tente novamente.');
+      }
     } catch (e) {
       setState(() => _erroBanco = 'Erro ao cadastrar. Tente novamente.');
     } finally {
@@ -97,7 +94,10 @@ class _TelaCadastroState extends State<TelaCadastro> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('UniGo', style: TextStyle(fontWeight: FontWeight.bold)),
+        title: const Text(
+          'UniGo',
+          style: TextStyle(fontWeight: FontWeight.bold),
+        ),
         centerTitle: true,
         backgroundColor: Colors.indigo,
         foregroundColor: Colors.white,
@@ -132,7 +132,9 @@ class _TelaCadastroState extends State<TelaCadastro> {
                 decoration: InputDecoration(
                   labelText: 'Nome',
                   prefixIcon: const Icon(Icons.person_outline),
-                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(10),
+                  ),
                 ),
               ),
 
@@ -146,7 +148,9 @@ class _TelaCadastroState extends State<TelaCadastro> {
                 decoration: InputDecoration(
                   labelText: 'Curso',
                   prefixIcon: const Icon(Icons.school_outlined),
-                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(10),
+                  ),
                 ),
               ),
 
@@ -160,7 +164,9 @@ class _TelaCadastroState extends State<TelaCadastro> {
                 decoration: InputDecoration(
                   labelText: 'Matrícula',
                   prefixIcon: const Icon(Icons.tag),
-                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(10),
+                  ),
                 ),
               ),
 
@@ -174,7 +180,9 @@ class _TelaCadastroState extends State<TelaCadastro> {
                 decoration: InputDecoration(
                   labelText: 'E-mail',
                   prefixIcon: const Icon(Icons.email_outlined),
-                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(10),
+                  ),
                 ),
               ),
 
@@ -189,14 +197,19 @@ class _TelaCadastroState extends State<TelaCadastro> {
                   labelText: 'Senha',
                   prefixIcon: const Icon(Icons.lock_outline),
                   suffixIcon: IconButton(
-                    icon: Icon(_senhaVisivel ? Icons.visibility_off : Icons.visibility),
-                    onPressed: () => setState(() => _senhaVisivel = !_senhaVisivel),
+                    icon: Icon(
+                      _senhaVisivel ? Icons.visibility_off : Icons.visibility,
+                    ),
+                    onPressed: () =>
+                        setState(() => _senhaVisivel = !_senhaVisivel),
                   ),
-                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(10),
+                  ),
                 ),
               ),
 
-              // Mensagem de erro do banco
+              // Mensagem de erro
               if (_erroBanco != null) ...[
                 const SizedBox(height: 12),
                 Text(
@@ -230,7 +243,10 @@ class _TelaCadastroState extends State<TelaCadastro> {
                         )
                       : const Text(
                           "Cadastrar",
-                          style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                          ),
                         ),
                 ),
               ),

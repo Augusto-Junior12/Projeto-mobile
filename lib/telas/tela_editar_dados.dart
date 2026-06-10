@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:projeto_app/models/usuario_model.dart';
 import 'package:projeto_app/repositories/usuario_repository.dart';
 
-// TelaEditarDados — edita nome, curso e matrícula e persiste no SQLite
+// TelaEditarDados — edita nome, curso e matrícula e persiste no Firestore
 class TelaEditarDados extends StatefulWidget {
   final UsuarioModel usuario;
 
@@ -29,7 +29,7 @@ class _TelaEditarDadosState extends State<TelaEditarDados> {
     _raController = TextEditingController(text: widget.usuario.matricula);
   }
 
-  // Salva as alterações no SQLite e retorna o usuário atualizado para TelaPerfil
+  // Salva as alterações no Firestore e retorna o usuário atualizado para TelaPerfil
   Future<void> _salvarDados() async {
     final nomeTrimado = _nomeController.text.trim();
     final cursoTrimado = _cursoController.text.trim();
@@ -169,7 +169,10 @@ class _TelaEditarDadosState extends State<TelaEditarDados> {
                       )
                     : const Text(
                         'Salvar',
-                        style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                        ),
                       ),
               ),
             ),
