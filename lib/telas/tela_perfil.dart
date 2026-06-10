@@ -6,6 +6,7 @@ import 'package:projeto_app/telas/tela_editar_dados.dart';
 import 'package:projeto_app/utils/componentes.dart';
 import 'package:projeto_app/repositories/usuario_repository.dart';
 
+//bora resolver isso ai
 // TelaPerfil — exibe os dados reais do usuário logado vindos do Firestore e gerencia a foto de perfil
 class TelaPerfil extends StatefulWidget {
   final UsuarioModel usuarioLogado;
