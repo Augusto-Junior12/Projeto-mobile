@@ -1,10 +1,18 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 import 'package:projeto_app/telas/tela_login.dart';
 import 'package:projeto_app/services/notification_service.dart';
 import 'package:projeto_app/services/map_route_service.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  // Inicializa a FFI para SQLite em sistemas desktop (Windows/Linux)
+  if (Platform.isWindows || Platform.isLinux) {
+    sqfliteFfiInit();
+    databaseFactory = databaseFactoryFfi;
+  }
 
   // Inicializa os serviços Singleton antes de rodar o app
   await NotificationService().init();

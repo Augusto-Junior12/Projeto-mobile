@@ -174,6 +174,8 @@ class _TelaMapaState extends State<TelaMapa> {
                   options: MapOptions(
                     initialCenter: MapRouteService.facultyPosition,
                     initialZoom: 14.0,
+                    minZoom: 10.0,
+                    maxZoom: 18.0,
                   ),
                   children: [
                     // Camada de tiles (preparada para cache via HTTP)
