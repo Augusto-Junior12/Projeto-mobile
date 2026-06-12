@@ -1,11 +1,11 @@
-// Modelo de dados do usuário — representa uma linha da tabela 'usuarios' no SQLite
+// Modelo de dados do usuário — representa um documento da coleção 'usuarios' no Firestore
 class UsuarioModel {
   final String? uid;
   final String nome;
   final String curso;
   final String matricula;
   final String email;
-  final String senha;
+  final String? senha;     // apenas em memória durante o cadastro; NUNCA gravada no Firestore
   final String? fotoPath;
 
   const UsuarioModel({
@@ -14,11 +14,13 @@ class UsuarioModel {
     required this.curso,
     required this.matricula,
     required this.email,
-    required this.senha,
+    this.senha,            // opcional — não é exigida fora do fluxo de cadastro/login
     this.fotoPath,
   });
 
-  // Converte o objeto para Map (usado no insert/update do sqflite)
+  // Converte o objeto para Map destinado ao Firestore.
+  // O campo [senha] é intencionalmente omitido — autenticação é
+  // responsabilidade exclusiva do Firebase Auth, não do Firestore.
   Map<String, dynamic> toMap() {
     return {
       'uid': uid,
@@ -26,12 +28,13 @@ class UsuarioModel {
       'curso': curso,
       'matricula': matricula,
       'email': email,
-      'senha': senha,
       'fotoPath': fotoPath,
+      // senha NÃO é gravada no Firestore
     };
   }
 
-  // Cria um UsuarioModel a partir de um Map retornado pelo sqflite
+  // Reconstrói o modelo a partir de um documento do Firestore.
+  // [senha] não existe no Firestore, portanto fica null por padrão.
   factory UsuarioModel.fromMap(Map<String, dynamic> map) {
     return UsuarioModel(
       uid: map['uid'] as String?,
@@ -39,14 +42,14 @@ class UsuarioModel {
       curso: map['curso'] as String,
       matricula: map['matricula'] as String,
       email: map['email'] as String,
-      senha: map['senha'] as String,
+      senha: map['senha'] as String?,   // campo ausente no Firestore → null
       fotoPath: map['fotoPath'] as String?,
     );
   }
 
   // Retorna uma cópia do objeto com campos alterados (útil para edição)
   UsuarioModel copyWith({
-    int? id,
+    String? uid,
     String? nome,
     String? curso,
     String? matricula,
