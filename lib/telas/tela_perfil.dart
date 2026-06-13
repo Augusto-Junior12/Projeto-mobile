@@ -31,7 +31,7 @@ class _TelaPerfilState extends State<TelaPerfil> {
   // Seleciona uma imagem do dispositivo e atualiza a foto do perfil
   Future<void> _escolherFotoPerfil() async {
     try {
-      final resultado = await FilePicker.platform.pickFiles(
+      final resultado = await FilePicker.pickFiles(
         type: FileType.image,
         allowMultiple: false,
       );

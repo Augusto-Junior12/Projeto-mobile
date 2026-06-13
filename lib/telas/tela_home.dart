@@ -22,7 +22,7 @@ class _TelaHomeState extends State<TelaHome> {
       case 0:
         return const TelaMapa();
       case 1:
-        return const TelaRotas();
+        return TelaRotas(onIrParaMapa: () => setState(() => _abaSelecionada = 0));
       case 2:
         return TelaPerfil(usuarioLogado: widget.usuarioLogado);
       default:

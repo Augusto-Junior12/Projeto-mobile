@@ -5,7 +5,9 @@ import 'package:projeto_app/utils/componentes.dart';
 
 // Tela de rotas — usa ItemRota (component) e CaixaDialogo (utils) do orientador
 class TelaRotas extends StatefulWidget {
-  const TelaRotas({super.key});
+  final VoidCallback? onIrParaMapa;
+
+  const TelaRotas({super.key, this.onIrParaMapa});
 
   @override
   State<TelaRotas> createState() => _TelaRotasState();
@@ -94,14 +96,7 @@ class _TelaRotasState extends State<TelaRotas> {
                 onPressed: () async {
                   Navigator.pop(context);
                   await _mapService.loadRoute(route.geoJsonIndex!, route.name);
-                  if (context.mounted) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                        content: Text('🚌 ${route.name} carregada! Vá ao Mapa para visualizar.'),
-                        backgroundColor: Colors.indigo,
-                      ),
-                    );
-                  }
+                  widget.onIrParaMapa?.call();
                 },
                 icon: const Icon(Icons.map),
                 label: const Text('Carregar no Mapa'),
