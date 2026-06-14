@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:projeto_app/services/map_route_service.dart';
 import 'package:projeto_app/components/item_rota.dart';
 import 'package:projeto_app/utils/componentes.dart';
+import 'package:projeto_app/telas/tela_criar_rota_mapa.dart';
 
 // Tela de rotas — usa ItemRota (component) e CaixaDialogo (utils) do orientador
 class TelaRotas extends StatefulWidget {
@@ -176,7 +177,8 @@ class _TelaRotasState extends State<TelaRotas> {
               onPressed: () => Navigator.pop(context),
               child: const Text('Cancelar', style: TextStyle(color: Colors.grey)),
             ),
-            ElevatedButton.icon(
+            // Salvar sem dados de mapa
+            OutlinedButton.icon(
               onPressed: () {
                 if (nomeController.text.isEmpty ||
                     origemController.text.isEmpty ||
@@ -192,17 +194,13 @@ class _TelaRotasState extends State<TelaRotas> {
                 }
 
                 final nomeDaRota = nomeController.text;
-
                 _mapService.addRoute(
                   name: nomeDaRota,
                   origin: origemController.text,
                   destination: destinoController.text,
                   estimatedTime: tempoController.text,
                 );
-
                 Navigator.pop(context);
-
-                // ✅ Snackbar de confirmação ao cadastrar nova rota
                 ScaffoldMessenger.of(context).showSnackBar(
                   SnackBar(
                     content: Row(
@@ -211,13 +209,13 @@ class _TelaRotasState extends State<TelaRotas> {
                         const SizedBox(width: 8),
                         Expanded(
                           child: Text(
-                            'Rota "$nomeDaRota" cadastrada com sucesso!',
+                            'Rota "$nomeDaRota" cadastrada sem mapa.',
                             style: const TextStyle(fontWeight: FontWeight.bold),
                           ),
                         ),
                       ],
                     ),
-                    backgroundColor: Colors.green.shade700,
+                    backgroundColor: Colors.grey.shade700,
                     duration: const Duration(seconds: 3),
                     behavior: SnackBarBehavior.floating,
                     shape: RoundedRectangleBorder(
@@ -226,8 +224,49 @@ class _TelaRotasState extends State<TelaRotas> {
                   ),
                 );
               },
-              icon: const Icon(Icons.add),
-              label: const Text('Adicionar'),
+              icon: const Icon(Icons.save_outlined),
+              label: const Text('Sem mapa'),
+              style: OutlinedButton.styleFrom(
+                foregroundColor: Colors.indigo,
+                side: const BorderSide(color: Colors.indigo),
+              ),
+            ),
+            // Ir para tela de desenho da rota no mapa
+            ElevatedButton.icon(
+              onPressed: () {
+                if (nomeController.text.isEmpty ||
+                    origemController.text.isEmpty ||
+                    destinoController.text.isEmpty ||
+                    tempoController.text.isEmpty) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text('Preencha todos os campos!'),
+                      backgroundColor: Colors.red,
+                    ),
+                  );
+                  return;
+                }
+
+                final nome = nomeController.text;
+                final origem = origemController.text;
+                final destino = destinoController.text;
+                final tempo = tempoController.text;
+
+                Navigator.pop(context);
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => TelaCriarRotaMapa(
+                      nome: nome,
+                      origem: origem,
+                      destino: destino,
+                      tempo: tempo,
+                    ),
+                  ),
+                );
+              },
+              icon: const Icon(Icons.map),
+              label: const Text('Desenhar no mapa'),
               style: ElevatedButton.styleFrom(
                 backgroundColor: Colors.indigo,
                 foregroundColor: Colors.white,

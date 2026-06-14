@@ -5,6 +5,7 @@ import 'package:projeto_app/telas/tela_cadastro.dart';
 import 'package:projeto_app/utils/validadores.dart';
 import 'package:projeto_app/models/usuario_model.dart';
 import 'package:projeto_app/repositories/usuario_repository.dart';
+import 'package:projeto_app/services/map_route_service.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
 // Tela de login — autentica o usuário via Firebase Auth e busca o perfil no Firestore
@@ -43,6 +44,11 @@ class _TelaloginState extends State<Telalogin> {
       if (!mounted) return;
 
       if (usuario != null) {
+        // Garante que as rotas estão carregadas antes de ir para a Home
+        await MapRouteService().loadUserRoutes(usuario.uid!);
+
+        if (!mounted) return;
+
         // Login bem-sucedido: navega para Home passando o usuário logado
         Navigator.pushReplacement(
           context,

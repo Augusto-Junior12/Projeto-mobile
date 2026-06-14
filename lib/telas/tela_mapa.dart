@@ -167,40 +167,132 @@ class _TelaMapaState extends State<TelaMapa> {
 
             // O Mapa (FlutterMap real com tiles OpenStreetMap)
             Expanded(
-              child: ClipRRect(
-                borderRadius: BorderRadius.circular(16), // Mantém bordas arredondadas
-                child: FlutterMap(
-                  mapController: _mapController,
-                  options: MapOptions(
-                    initialCenter: MapRouteService.facultyPosition,
-                    initialZoom: 14.0,
-                    minZoom: 10.0,
-                    maxZoom: 18.0,
-                  ),
-                  children: [
-                    // Camada de tiles (preparada para cache via HTTP)
-                    TileLayer(
-                      urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
-                      userAgentPackageName: 'com.unigo.app',
-                      maxZoom: 19,
-                    ),
-
-                    // Camada de polilinha (rota ativa)
-                    if (_mapService.activeRoute.value.isNotEmpty)
-                      PolylineLayer(
-                        polylines: [
-                          Polyline(
-                            points: _mapService.activeRoute.value,
-                            strokeWidth: 5.0,
-                            color: Colors.indigo,
-                          ),
-                        ],
+              child: Stack(
+                children: [
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(16),
+                    child: FlutterMap(
+                      mapController: _mapController,
+                      options: MapOptions(
+                        initialCenter: MapRouteService.facultyPosition,
+                        initialZoom: 14.0,
+                        minZoom: 10.0,
+                        maxZoom: 18.0,
                       ),
+                      children: [
+                        // Camada de tiles (preparada para cache via HTTP)
+                        TileLayer(
+                          urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+                          userAgentPackageName: 'com.unigo.app',
+                          maxZoom: 19,
+                        ),
 
-                    // Camada de marcadores (faculdade + usuário)
-                    MarkerLayer(markers: _buildMarkers()),
-                  ],
-                ),
+                        // Camada de polilinha (rota ativa)
+                        if (_mapService.activeRoute.value.isNotEmpty)
+                          PolylineLayer(
+                            polylines: [
+                              Polyline(
+                                points: _mapService.activeRoute.value,
+                                strokeWidth: 5.0,
+                                color: Colors.indigo,
+                              ),
+                            ],
+                          ),
+
+                        // Camada de marcadores (faculdade + usuário)
+                        MarkerLayer(markers: _buildMarkers()),
+                      ],
+                    ),
+                  ),
+
+                  // ── Card flutuante com rota ativa ──────────────────────
+                  if (_mapService.activeRoute.value.isNotEmpty)
+                    Positioned(
+                      top: 12,
+                      left: 12,
+                      right: 12,
+                      child: Material(
+                        elevation: 6,
+                        borderRadius: BorderRadius.circular(14),
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 14, vertical: 10),
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            borderRadius: BorderRadius.circular(14),
+                            border: Border.all(
+                                color: Colors.indigo.shade100, width: 1),
+                          ),
+                          child: Row(
+                            children: [
+                              const Icon(Icons.directions_bus,
+                                  color: Colors.indigo, size: 22),
+                              const SizedBox(width: 10),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment:
+                                      CrossAxisAlignment.start,
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    const Text(
+                                      'Rota ativa',
+                                      style: TextStyle(
+                                          fontSize: 11,
+                                          color: Colors.grey),
+                                    ),
+                                    Text(
+                                      _mapService.activeRouteName.value ??
+                                          '—',
+                                      style: const TextStyle(
+                                        fontWeight: FontWeight.bold,
+                                        color: Colors.indigo,
+                                        fontSize: 14,
+                                      ),
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              const SizedBox(width: 8),
+                              TextButton.icon(
+                                onPressed: () {
+                                  _mapService.clearRoute();
+                                  ScaffoldMessenger.of(context)
+                                      .showSnackBar(
+                                    const SnackBar(
+                                      content: Text(
+                                          '🗺️ Rota descarregada do mapa.'),
+                                      backgroundColor: Colors.grey,
+                                      duration: Duration(seconds: 2),
+                                      behavior: SnackBarBehavior.floating,
+                                    ),
+                                  );
+                                },
+                                icon: const Icon(Icons.eject,
+                                    size: 16, color: Colors.red),
+                                label: const Text(
+                                  'Descarregar',
+                                  style: TextStyle(
+                                      color: Colors.red,
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 13),
+                                ),
+                                style: TextButton.styleFrom(
+                                  padding: const EdgeInsets.symmetric(
+                                      horizontal: 10, vertical: 6),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(8),
+                                    side: const BorderSide(
+                                        color: Colors.red, width: 1),
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
+                ],
               ),
             ),
 

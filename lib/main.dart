@@ -1,4 +1,3 @@
-import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:projeto_app/telas/tela_login.dart';
 import 'package:projeto_app/services/notification_service.dart';
