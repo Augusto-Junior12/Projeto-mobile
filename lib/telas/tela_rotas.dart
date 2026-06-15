@@ -2,10 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:projeto_app/services/map_route_service.dart';
 import 'package:projeto_app/components/item_rota.dart';
 import 'package:projeto_app/utils/componentes.dart';
+import 'package:projeto_app/telas/tela_criar_rota_mapa.dart';
 
-// Tela de rotas — usa ItemRota (component) e CaixaDialogo (utils) do orientador
 class TelaRotas extends StatefulWidget {
-  const TelaRotas({super.key});
+  final VoidCallback? onIrParaMapa;
+
+  const TelaRotas({super.key, this.onIrParaMapa});
 
   @override
   State<TelaRotas> createState() => _TelaRotasState();
@@ -30,7 +32,6 @@ class _TelaRotasState extends State<TelaRotas> {
     super.dispose();
   }
 
-  // ── Pop-up: Detalhes da Rota ───────────────────────────────────────────
   void _mostrarDetalhesRota(BuildContext context, RouteInfo route) {
     showDialog(
       context: context,
@@ -94,14 +95,7 @@ class _TelaRotasState extends State<TelaRotas> {
                 onPressed: () async {
                   Navigator.pop(context);
                   await _mapService.loadRoute(route.geoJsonIndex!, route.name);
-                  if (context.mounted) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                        content: Text('🚌 ${route.name} carregada! Vá ao Mapa para visualizar.'),
-                        backgroundColor: Colors.indigo,
-                      ),
-                    );
-                  }
+                  widget.onIrParaMapa?.call();
                 },
                 icon: const Icon(Icons.map),
                 label: const Text('Carregar no Mapa'),
@@ -116,7 +110,6 @@ class _TelaRotasState extends State<TelaRotas> {
     );
   }
 
-  // ── Pop-up: Adicionar Nova Rota ────────────────────────────────────────
   void _mostrarDialogoAdicionarRota(BuildContext context) {
     final nomeController = TextEditingController();
     final origemController = TextEditingController();
@@ -181,7 +174,8 @@ class _TelaRotasState extends State<TelaRotas> {
               onPressed: () => Navigator.pop(context),
               child: const Text('Cancelar', style: TextStyle(color: Colors.grey)),
             ),
-            ElevatedButton.icon(
+
+            OutlinedButton.icon(
               onPressed: () {
                 if (nomeController.text.isEmpty ||
                     origemController.text.isEmpty ||
@@ -197,17 +191,13 @@ class _TelaRotasState extends State<TelaRotas> {
                 }
 
                 final nomeDaRota = nomeController.text;
-
                 _mapService.addRoute(
                   name: nomeDaRota,
                   origin: origemController.text,
                   destination: destinoController.text,
                   estimatedTime: tempoController.text,
                 );
-
                 Navigator.pop(context);
-
-                // ✅ Snackbar de confirmação ao cadastrar nova rota
                 ScaffoldMessenger.of(context).showSnackBar(
                   SnackBar(
                     content: Row(
@@ -216,13 +206,13 @@ class _TelaRotasState extends State<TelaRotas> {
                         const SizedBox(width: 8),
                         Expanded(
                           child: Text(
-                            'Rota "$nomeDaRota" cadastrada com sucesso!',
+                            'Rota "$nomeDaRota" cadastrada sem mapa.',
                             style: const TextStyle(fontWeight: FontWeight.bold),
                           ),
                         ),
                       ],
                     ),
-                    backgroundColor: Colors.green.shade700,
+                    backgroundColor: Colors.grey.shade700,
                     duration: const Duration(seconds: 3),
                     behavior: SnackBarBehavior.floating,
                     shape: RoundedRectangleBorder(
@@ -231,8 +221,49 @@ class _TelaRotasState extends State<TelaRotas> {
                   ),
                 );
               },
-              icon: const Icon(Icons.add),
-              label: const Text('Adicionar'),
+              icon: const Icon(Icons.save_outlined),
+              label: const Text('Sem mapa'),
+              style: OutlinedButton.styleFrom(
+                foregroundColor: Colors.indigo,
+                side: const BorderSide(color: Colors.indigo),
+              ),
+            ),
+
+            ElevatedButton.icon(
+              onPressed: () {
+                if (nomeController.text.isEmpty ||
+                    origemController.text.isEmpty ||
+                    destinoController.text.isEmpty ||
+                    tempoController.text.isEmpty) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text('Preencha todos os campos!'),
+                      backgroundColor: Colors.red,
+                    ),
+                  );
+                  return;
+                }
+
+                final nome = nomeController.text;
+                final origem = origemController.text;
+                final destino = destinoController.text;
+                final tempo = tempoController.text;
+
+                Navigator.pop(context);
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => TelaCriarRotaMapa(
+                      nome: nome,
+                      origem: origem,
+                      destino: destino,
+                      tempo: tempo,
+                    ),
+                  ),
+                );
+              },
+              icon: const Icon(Icons.map),
+              label: const Text('Desenhar no mapa'),
               style: ElevatedButton.styleFrom(
                 backgroundColor: Colors.indigo,
                 foregroundColor: Colors.white,
@@ -244,7 +275,6 @@ class _TelaRotasState extends State<TelaRotas> {
     );
   }
 
-  // ── Pop-up: Editar Rota ────────────────────────────────────────────────
   void _mostrarDialogoEditarRota(BuildContext context, RouteInfo route) {
     final nomeController = TextEditingController(text: route.name);
     final origemController = TextEditingController(text: route.origin);
@@ -372,7 +402,6 @@ class _TelaRotasState extends State<TelaRotas> {
     );
   }
 
-  // ── Exclusão de rota usando CaixaDialogo (utils/componentes.dart) ──────
   Future<void> _confirmarExclusaoRota(BuildContext context, RouteInfo route) async {
     final confirmado = await CaixaDialogo.confirmar(
       context,
@@ -394,13 +423,12 @@ class _TelaRotasState extends State<TelaRotas> {
     }
   }
 
-  // ── Contador de rotas (banner abaixo do AppBar) ────────────────────────
   Widget _buildRouteCounter(int total) {
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 16),
       decoration: const BoxDecoration(
-        color: Color(0xFFECEAF8), // lavanda suave — entre roxo e branco
+        color: Color(0xFFECEAF8),
         border: Border(
           bottom: BorderSide(color: Color(0xFFD5D0F0), width: 1),
         ),
@@ -423,10 +451,9 @@ class _TelaRotasState extends State<TelaRotas> {
 
     return Column(
       children: [
-        // ── Contador de rotas logo abaixo do AppBar ─────────────────────
+
         _buildRouteCounter(routesList.length),
 
-        // ── Lista de rotas + FAB ─────────────────────────────────────────
         Expanded(
           child: Stack(
             children: [
@@ -445,7 +472,6 @@ class _TelaRotasState extends State<TelaRotas> {
 
                   const SizedBox(height: 20),
 
-                  // Lista usando ItemRota — componente do orientador
                   if (routesList.isEmpty)
                     const Padding(
                       padding: EdgeInsets.symmetric(vertical: 40),
@@ -469,7 +495,6 @@ class _TelaRotasState extends State<TelaRotas> {
                 ],
               ),
 
-              // ── FAB: Adicionar Rota ────────────────────────────────────
               Positioned(
                 bottom: 16,
                 right: 16,

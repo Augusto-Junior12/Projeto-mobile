@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:projeto_app/telas/tela_home.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:projeto_app/models/usuario_model.dart';
 import 'package:projeto_app/utils/validadores.dart';
+import 'package:projeto_app/repositories/usuario_repository.dart';
 
-// Tela de cadastro — usa Validadores (utils) do orientador
 class TelaCadastro extends StatefulWidget {
   const TelaCadastro({super.key});
 
@@ -12,6 +13,7 @@ class TelaCadastro extends StatefulWidget {
 
 class _TelaCadastroState extends State<TelaCadastro> {
   final _formKey = GlobalKey<FormState>();
+  final UsuarioRepository _repository = UsuarioRepository();
 
   final TextEditingController _nomeController = TextEditingController();
   final TextEditingController _cursoController = TextEditingController();
@@ -20,8 +22,9 @@ class _TelaCadastroState extends State<TelaCadastro> {
   final TextEditingController _senhaController = TextEditingController();
 
   bool _senhaVisivel = false;
+  bool _carregando = false;
+  String? _erroBanco;
 
-  // Validadores específicos do cadastro (curso e matrícula são locais pois não estão em Validadores)
   String? _validarCurso(String? valor) {
     if (valor == null || valor.trim().isEmpty) return 'Informe seu curso';
     return null;
@@ -32,13 +35,45 @@ class _TelaCadastroState extends State<TelaCadastro> {
     return null;
   }
 
-  void _cadastrar() {
-    if (_formKey.currentState!.validate()) {
-      // Aqui futuramente: salvar no banco/API
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(builder: (context) => const TelaHome()),
+  Future<void> _cadastrar() async {
+    if (!_formKey.currentState!.validate()) return;
+
+    setState(() {
+      _carregando = true;
+      _erroBanco = null;
+    });
+
+    try {
+      final novoUsuario = UsuarioModel(
+        nome: _nomeController.text.trim(),
+        curso: _cursoController.text.trim(),
+        matricula: _matriculaController.text.trim(),
+        email: _emailController.text.trim(),
+        senha: _senhaController.text,
       );
+
+      await _repository.cadastrar(novoUsuario, _senhaController.text);
+
+      if (!mounted) return;
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Cadastro realizado com sucesso! Faça seu login.'),
+          backgroundColor: Colors.green,
+        ),
+      );
+
+      Navigator.pop(context);
+    } on FirebaseAuthException catch (e) {
+      if (e.code == 'email-already-in-use') {
+        setState(() => _erroBanco = 'Este e-mail já está cadastrado.');
+      } else {
+        setState(() => _erroBanco = 'Erro ao cadastrar. Tente novamente.');
+      }
+    } catch (e) {
+      setState(() => _erroBanco = 'Erro ao cadastrar. Tente novamente.');
+    } finally {
+      if (mounted) setState(() => _carregando = false);
     }
   }
 
@@ -56,7 +91,10 @@ class _TelaCadastroState extends State<TelaCadastro> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('UniGo', style: TextStyle(fontWeight: FontWeight.bold)),
+        title: const Text(
+          'UniGo',
+          style: TextStyle(fontWeight: FontWeight.bold),
+        ),
         centerTitle: true,
         backgroundColor: Colors.indigo,
         foregroundColor: Colors.white,
@@ -83,7 +121,6 @@ class _TelaCadastroState extends State<TelaCadastro> {
 
               const SizedBox(height: 30),
 
-              // Nome — Validadores.validarNome
               TextFormField(
                 controller: _nomeController,
                 validator: Validadores.validarNome,
@@ -91,13 +128,14 @@ class _TelaCadastroState extends State<TelaCadastro> {
                 decoration: InputDecoration(
                   labelText: 'Nome',
                   prefixIcon: const Icon(Icons.person_outline),
-                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(10),
+                  ),
                 ),
               ),
 
               const SizedBox(height: 20),
 
-              // Curso — validador local
               TextFormField(
                 controller: _cursoController,
                 validator: _validarCurso,
@@ -105,13 +143,14 @@ class _TelaCadastroState extends State<TelaCadastro> {
                 decoration: InputDecoration(
                   labelText: 'Curso',
                   prefixIcon: const Icon(Icons.school_outlined),
-                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(10),
+                  ),
                 ),
               ),
 
               const SizedBox(height: 20),
 
-              // Matrícula — validador local
               TextFormField(
                 controller: _matriculaController,
                 validator: _validarMatricula,
@@ -119,13 +158,14 @@ class _TelaCadastroState extends State<TelaCadastro> {
                 decoration: InputDecoration(
                   labelText: 'Matrícula',
                   prefixIcon: const Icon(Icons.tag),
-                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(10),
+                  ),
                 ),
               ),
 
               const SizedBox(height: 20),
 
-              // E-mail — Validadores.validarEmail
               TextFormField(
                 controller: _emailController,
                 validator: Validadores.validarEmail,
@@ -133,13 +173,14 @@ class _TelaCadastroState extends State<TelaCadastro> {
                 decoration: InputDecoration(
                   labelText: 'E-mail',
                   prefixIcon: const Icon(Icons.email_outlined),
-                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(10),
+                  ),
                 ),
               ),
 
               const SizedBox(height: 20),
 
-              // Senha — Validadores.validarSenha (mínimo 6 caracteres)
               TextFormField(
                 controller: _senhaController,
                 obscureText: !_senhaVisivel,
@@ -148,12 +189,25 @@ class _TelaCadastroState extends State<TelaCadastro> {
                   labelText: 'Senha',
                   prefixIcon: const Icon(Icons.lock_outline),
                   suffixIcon: IconButton(
-                    icon: Icon(_senhaVisivel ? Icons.visibility_off : Icons.visibility),
-                    onPressed: () => setState(() => _senhaVisivel = !_senhaVisivel),
+                    icon: Icon(
+                      _senhaVisivel ? Icons.visibility_off : Icons.visibility,
+                    ),
+                    onPressed: () =>
+                        setState(() => _senhaVisivel = !_senhaVisivel),
                   ),
-                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(10),
+                  ),
                 ),
               ),
+
+              if (_erroBanco != null) ...[
+                const SizedBox(height: 12),
+                Text(
+                  _erroBanco!,
+                  style: const TextStyle(color: Colors.red, fontSize: 14),
+                ),
+              ],
 
               const SizedBox(height: 30),
 
@@ -161,7 +215,7 @@ class _TelaCadastroState extends State<TelaCadastro> {
                 width: double.infinity,
                 height: 50,
                 child: ElevatedButton(
-                  onPressed: _cadastrar,
+                  onPressed: _carregando ? null : _cadastrar,
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Colors.indigo,
                     foregroundColor: Colors.white,
@@ -169,10 +223,22 @@ class _TelaCadastroState extends State<TelaCadastro> {
                       borderRadius: BorderRadius.circular(25),
                     ),
                   ),
-                  child: const Text(
-                    "Cadastrar",
-                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-                  ),
+                  child: _carregando
+                      ? const SizedBox(
+                          height: 22,
+                          width: 22,
+                          child: CircularProgressIndicator(
+                            color: Colors.white,
+                            strokeWidth: 2.5,
+                          ),
+                        )
+                      : const Text(
+                          "Cadastrar",
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
                 ),
               ),
             ],

@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:projeto_app/services/map_route_service.dart';
 
-// 1. Criamos a tela do mapa como um StatefulWidget para poder adicionar interatividade no futuro
 class TelaMapa extends StatefulWidget {
   const TelaMapa({super.key});
 
@@ -10,16 +9,15 @@ class TelaMapa extends StatefulWidget {
   State<TelaMapa> createState() => _TelaMapaState();
 }
 
-// 2. O estado da tela do mapa, onde vamos construir a interface
 class _TelaMapaState extends State<TelaMapa> {
-  // ── NOVO: referência ao serviço e controlador do mapa ──────────────────
+
   final MapRouteService _mapService = MapRouteService();
   final MapController _mapController = MapController();
 
   @override
   void initState() {
     super.initState();
-    // Escuta mudanças de posição e rota para redesenhar o mapa
+
     _mapService.userPosition.addListener(_onMapDataChanged);
     _mapService.activeRoute.addListener(_onMapDataChanged);
     _mapService.arrivedAtFaculty.addListener(_onArrivalChanged);
@@ -50,11 +48,9 @@ class _TelaMapaState extends State<TelaMapa> {
     super.dispose();
   }
 
-  /// Constrói a lista de marcadores para o mapa
   List<Marker> _buildMarkers() {
     final markers = <Marker>[];
 
-    // Marcador da faculdade
     markers.add(
       Marker(
         point: MapRouteService.facultyPosition,
@@ -67,7 +63,6 @@ class _TelaMapaState extends State<TelaMapa> {
       ),
     );
 
-    // Marcador do usuário
     final userPos = _mapService.userPosition.value;
     if (userPos != null) {
       markers.add(
@@ -83,7 +78,6 @@ class _TelaMapaState extends State<TelaMapa> {
       );
     }
 
-    // Marcador de origem da rota ativa (ponto de partida)
     final route = _mapService.activeRoute.value;
     if (route.isNotEmpty) {
       final originPoint = route.first;
@@ -105,16 +99,16 @@ class _TelaMapaState extends State<TelaMapa> {
   }
 
   @override
-  // 3. Construímos a interface da tela do mapa, com um campo para digitar a localização e um mapa interativo
+
   Widget build(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.all(
           16.0,
-        ), // Adiciona um pouco de espaço ao redor do conteúdo
+        ),
 
         child: Column(
           crossAxisAlignment: CrossAxisAlignment
-              .stretch, // Estica o conteúdo para ocupar toda a largura disponível
+              .stretch,
           children: [
 
             const Text(
@@ -123,82 +117,172 @@ class _TelaMapaState extends State<TelaMapa> {
                 fontSize: 24,
                 fontWeight: FontWeight.bold,
                 color: Colors
-                    .indigo, // Deixa o texto do título com a mesma cor do AppBar
+                    .indigo,
               ),
-              textAlign: TextAlign.center, // Centraliza o texto
+              textAlign: TextAlign.center,
             ),
 
             const SizedBox(
               height: 20,
-            ), // Adiciona um espaço entre o título e o conteúdo
+            ),
 
             const Text(
               'Encontre a rota mais rápida para a faculdade.',
               style: TextStyle(
                 fontSize: 16,
                 color: Colors
-                    .black87, // Deixa o texto com uma cor mais suave para leitura
+                    .black87,
               ),
-              textAlign: TextAlign.center, // Centraliza o texto
+              textAlign: TextAlign.center,
             ),
 
             const SizedBox(
               height: 30,
-            ), // Adiciona um espaço entre o texto e o campo
+            ),
 
             TextField(
               decoration: InputDecoration(
                 labelText:
-                    'Digite sua localização atual', // Texto de dica para o usuário
+                    'Digite sua localização atual',
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(
                     8,
-                  ), // Deixa as bordas do campo arredondadas
+                  ),
                 ),
                 prefixIcon: const Icon(
                   Icons.location_on,
-                ), // Adiciona um ícone de localização no início do campo
+                ),
               ),
             ),
 
             const SizedBox(
               height: 20,
-            ), // Adiciona um espaço entre o campo de texto e o mapa
+            ),
 
-            // O Mapa (FlutterMap real com tiles OpenStreetMap)
             Expanded(
-              child: ClipRRect(
-                borderRadius: BorderRadius.circular(16), // Mantém bordas arredondadas
-                child: FlutterMap(
-                  mapController: _mapController,
-                  options: MapOptions(
-                    initialCenter: MapRouteService.facultyPosition,
-                    initialZoom: 14.0,
-                  ),
-                  children: [
-                    // Camada de tiles (preparada para cache via HTTP)
-                    TileLayer(
-                      urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
-                      userAgentPackageName: 'com.unigo.app',
-                      maxZoom: 19,
-                    ),
-
-                    // Camada de polilinha (rota ativa)
-                    if (_mapService.activeRoute.value.isNotEmpty)
-                      PolylineLayer(
-                        polylines: [
-                          Polyline(
-                            points: _mapService.activeRoute.value,
-                            strokeWidth: 5.0,
-                            color: Colors.indigo,
-                          ),
-                        ],
+              child: Stack(
+                children: [
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(16),
+                    child: FlutterMap(
+                      mapController: _mapController,
+                      options: MapOptions(
+                        initialCenter: MapRouteService.facultyPosition,
+                        initialZoom: 14.0,
+                        minZoom: 10.0,
+                        maxZoom: 18.0,
                       ),
+                      children: [
 
-                    // Camada de marcadores (faculdade + usuário)
-                    MarkerLayer(markers: _buildMarkers()),
-                  ],
-                ),
+                        TileLayer(
+                          urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+                          userAgentPackageName: 'com.unigo.app',
+                          maxZoom: 19,
+                        ),
+
+                        if (_mapService.activeRoute.value.isNotEmpty)
+                          PolylineLayer(
+                            polylines: [
+                              Polyline(
+                                points: _mapService.activeRoute.value,
+                                strokeWidth: 5.0,
+                                color: Colors.indigo,
+                              ),
+                            ],
+                          ),
+
+                        MarkerLayer(markers: _buildMarkers()),
+                      ],
+                    ),
+                  ),
+
+                  if (_mapService.activeRoute.value.isNotEmpty)
+                    Positioned(
+                      top: 12,
+                      left: 12,
+                      right: 12,
+                      child: Material(
+                        elevation: 6,
+                        borderRadius: BorderRadius.circular(14),
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 14, vertical: 10),
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            borderRadius: BorderRadius.circular(14),
+                            border: Border.all(
+                                color: Colors.indigo.shade100, width: 1),
+                          ),
+                          child: Row(
+                            children: [
+                              const Icon(Icons.directions_bus,
+                                  color: Colors.indigo, size: 22),
+                              const SizedBox(width: 10),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment:
+                                      CrossAxisAlignment.start,
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    const Text(
+                                      'Rota ativa',
+                                      style: TextStyle(
+                                          fontSize: 11,
+                                          color: Colors.grey),
+                                    ),
+                                    Text(
+                                      _mapService.activeRouteName.value ??
+                                          '—',
+                                      style: const TextStyle(
+                                        fontWeight: FontWeight.bold,
+                                        color: Colors.indigo,
+                                        fontSize: 14,
+                                      ),
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              const SizedBox(width: 8),
+                              TextButton.icon(
+                                onPressed: () {
+                                  _mapService.clearRoute();
+                                  ScaffoldMessenger.of(context)
+                                      .showSnackBar(
+                                    const SnackBar(
+                                      content: Text(
+                                          '🗺️ Rota descarregada do mapa.'),
+                                      backgroundColor: Colors.grey,
+                                      duration: Duration(seconds: 2),
+                                      behavior: SnackBarBehavior.floating,
+                                    ),
+                                  );
+                                },
+                                icon: const Icon(Icons.eject,
+                                    size: 16, color: Colors.red),
+                                label: const Text(
+                                  'Descarregar',
+                                  style: TextStyle(
+                                      color: Colors.red,
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 13),
+                                ),
+                                style: TextButton.styleFrom(
+                                  padding: const EdgeInsets.symmetric(
+                                      horizontal: 10, vertical: 6),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(8),
+                                    side: const BorderSide(
+                                        color: Colors.red, width: 1),
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
+                ],
               ),
             ),
 
