@@ -2,10 +2,8 @@ import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 
-/// Serviço Singleton para gerenciar notificações locais do UniGo.
-/// Utiliza flutter_local_notifications para alertas visuais e sonoros.
 class NotificationService {
-  // ── Singleton ──────────────────────────────────────────────────────────
+
   static final NotificationService _instance = NotificationService._internal();
   factory NotificationService() => _instance;
   NotificationService._internal();
@@ -15,11 +13,9 @@ class NotificationService {
 
   bool _initialized = false;
 
-  // ── Inicialização ──────────────────────────────────────────────────────
   Future<void> init() async {
     if (_initialized) return;
 
-    // Se estiver rodando na web, Windows ou Linux, o plugin não suporta por padrão
     if (kIsWeb || Platform.isWindows || Platform.isLinux) {
       _initialized = true;
       debugPrint('[NotificationService] Notificações ignoradas para esta plataforma.');
@@ -43,7 +39,6 @@ class NotificationService {
 
       await _plugin.initialize(settings);
 
-      // Solicita permissão de notificação no Android 13+
       await _plugin
           .resolvePlatformSpecificImplementation<
               AndroidFlutterLocalNotificationsPlugin>()
@@ -56,7 +51,6 @@ class NotificationService {
     }
   }
 
-  // ── Notificação: Rota carregada ────────────────────────────────────────
   Future<void> showRouteLoadedNotification(String routeName) async {
     if (kIsWeb || Platform.isWindows || Platform.isLinux) {
       debugPrint('[NotificationService] showRouteLoadedNotification ignorado no Windows/Linux/Web.');
@@ -89,7 +83,6 @@ class NotificationService {
     }
   }
 
-  // ── Notificação: Chegada na faculdade (Geofencing) ─────────────────────
   Future<void> showArrivalNotification() async {
     if (kIsWeb || Platform.isWindows || Platform.isLinux) {
       debugPrint('[NotificationService] showArrivalNotification ignorado no Windows/Linux/Web.');

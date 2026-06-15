@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:projeto_app/models/usuario_model.dart';
 import 'package:projeto_app/repositories/usuario_repository.dart';
 
-// TelaEditarDados — edita nome, curso e matrícula e persiste no Firestore
 class TelaEditarDados extends StatefulWidget {
   final UsuarioModel usuario;
 
@@ -23,13 +22,12 @@ class _TelaEditarDadosState extends State<TelaEditarDados> {
   @override
   void initState() {
     super.initState();
-    // Pré-preenche os campos com os dados reais do usuário
+
     _nomeController = TextEditingController(text: widget.usuario.nome);
     _cursoController = TextEditingController(text: widget.usuario.curso);
     _raController = TextEditingController(text: widget.usuario.matricula);
   }
 
-  // Salva as alterações no Firestore e retorna o usuário atualizado para TelaPerfil
   Future<void> _salvarDados() async {
     final nomeTrimado = _nomeController.text.trim();
     final cursoTrimado = _cursoController.text.trim();
@@ -48,7 +46,7 @@ class _TelaEditarDadosState extends State<TelaEditarDados> {
     setState(() => _carregando = true);
 
     try {
-      // Cria cópia do usuário com os campos editados
+
       final usuarioAtualizado = widget.usuario.copyWith(
         nome: nomeTrimado,
         curso: cursoTrimado,
@@ -66,7 +64,6 @@ class _TelaEditarDadosState extends State<TelaEditarDados> {
         ),
       );
 
-      // Retorna o usuário atualizado para TelaPerfil via Navigator.pop
       Navigator.pop(context, usuarioAtualizado);
     } catch (e) {
       if (!mounted) return;
@@ -106,7 +103,7 @@ class _TelaEditarDadosState extends State<TelaEditarDados> {
         padding: const EdgeInsets.all(20.0),
         child: Column(
           children: [
-            // Campo Nome
+
             TextField(
               controller: _nomeController,
               textCapitalization: TextCapitalization.words,
@@ -119,7 +116,6 @@ class _TelaEditarDadosState extends State<TelaEditarDados> {
 
             const SizedBox(height: 20),
 
-            // Campo Curso
             TextField(
               controller: _cursoController,
               textCapitalization: TextCapitalization.words,
@@ -132,7 +128,6 @@ class _TelaEditarDadosState extends State<TelaEditarDados> {
 
             const SizedBox(height: 20),
 
-            // Campo RA (Matrícula)
             TextField(
               controller: _raController,
               keyboardType: TextInputType.number,
@@ -145,7 +140,6 @@ class _TelaEditarDadosState extends State<TelaEditarDados> {
 
             const SizedBox(height: 40),
 
-            // Botão Salvar
             SizedBox(
               width: double.infinity,
               height: 50,

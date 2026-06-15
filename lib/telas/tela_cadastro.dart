@@ -4,7 +4,6 @@ import 'package:projeto_app/models/usuario_model.dart';
 import 'package:projeto_app/utils/validadores.dart';
 import 'package:projeto_app/repositories/usuario_repository.dart';
 
-// Tela de cadastro — salva o novo usuário no Firebase Auth + Firestore via UsuarioRepository
 class TelaCadastro extends StatefulWidget {
   const TelaCadastro({super.key});
 
@@ -36,7 +35,6 @@ class _TelaCadastroState extends State<TelaCadastro> {
     return null;
   }
 
-  // Salva o usuário no Firebase Auth + Firestore e navega para a tela de login
   Future<void> _cadastrar() async {
     if (!_formKey.currentState!.validate()) return;
 
@@ -65,7 +63,6 @@ class _TelaCadastroState extends State<TelaCadastro> {
         ),
       );
 
-      // Volta para a tela de login após cadastrar
       Navigator.pop(context);
     } on FirebaseAuthException catch (e) {
       if (e.code == 'email-already-in-use') {
@@ -124,7 +121,6 @@ class _TelaCadastroState extends State<TelaCadastro> {
 
               const SizedBox(height: 30),
 
-              // Nome
               TextFormField(
                 controller: _nomeController,
                 validator: Validadores.validarNome,
@@ -140,7 +136,6 @@ class _TelaCadastroState extends State<TelaCadastro> {
 
               const SizedBox(height: 20),
 
-              // Curso
               TextFormField(
                 controller: _cursoController,
                 validator: _validarCurso,
@@ -156,7 +151,6 @@ class _TelaCadastroState extends State<TelaCadastro> {
 
               const SizedBox(height: 20),
 
-              // Matrícula
               TextFormField(
                 controller: _matriculaController,
                 validator: _validarMatricula,
@@ -172,7 +166,6 @@ class _TelaCadastroState extends State<TelaCadastro> {
 
               const SizedBox(height: 20),
 
-              // E-mail
               TextFormField(
                 controller: _emailController,
                 validator: Validadores.validarEmail,
@@ -188,7 +181,6 @@ class _TelaCadastroState extends State<TelaCadastro> {
 
               const SizedBox(height: 20),
 
-              // Senha
               TextFormField(
                 controller: _senhaController,
                 obscureText: !_senhaVisivel,
@@ -209,7 +201,6 @@ class _TelaCadastroState extends State<TelaCadastro> {
                 ),
               ),
 
-              // Mensagem de erro
               if (_erroBanco != null) ...[
                 const SizedBox(height: 12),
                 Text(

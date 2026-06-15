@@ -4,7 +4,6 @@ import 'package:projeto_app/telas/tela_mapa.dart';
 import 'package:projeto_app/telas/tela_rotas.dart';
 import 'package:projeto_app/telas/tela_perfil.dart';
 
-// TelaHome — recebe o usuário logado e o distribui às abas que precisam dele
 class TelaHome extends StatefulWidget {
   final UsuarioModel usuarioLogado;
 

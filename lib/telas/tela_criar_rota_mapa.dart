@@ -4,11 +4,6 @@ import 'package:latlong2/latlong.dart';
 import 'package:projeto_app/services/map_route_service.dart';
 import 'package:projeto_app/services/osrm_service.dart';
 
-/// Tela fullscreen para criar uma rota desenhando pontos no mapa.
-///
-/// O usuário toca no mapa para adicionar waypoints. Entre cada par
-/// consecutivo de waypoints, o app consulta o OSRM para traçar o
-/// caminho real pelas ruas (respeitando mão única e sentidos permitidos).
 class TelaCriarRotaMapa extends StatefulWidget {
   final String nome;
   final String origem;
@@ -31,51 +26,40 @@ class _TelaCriarRotaMapaState extends State<TelaCriarRotaMapa> {
   final MapRouteService _mapService = MapRouteService();
   final MapController _mapController = MapController();
 
-  /// Pontos tocados pelo usuário (waypoints originais — para marcadores).
   final List<LatLng> _waypoints = [];
 
-  /// Segmentos OSRM resolvidos: _segments[i] = pontos da rua entre
-  /// _waypoints[i] e _waypoints[i+1]. Sempre tem _waypoints.length - 1 itens.
   final List<List<LatLng>> _segments = [];
 
-  /// Segmentos que usaram fallback de linha reta (sem internet / erro OSRM).
   final Set<int> _fallbackSegments = {};
 
-  /// Indica se está aguardando resposta do OSRM.
   bool _loading = false;
-
-  // ── Helpers ──────────────────────────────────────────────────────────────
 
   String _formatLatLng(LatLng p) =>
       '${p.latitude.toStringAsFixed(5)}, ${p.longitude.toStringAsFixed(5)}';
 
-  /// Polilinha completa = todos os segmentos OSRM concatenados.
   List<LatLng> get _fullPolyline =>
       _segments.expand((seg) => seg).toList();
 
   bool get _hasFallback => _fallbackSegments.isNotEmpty;
 
-  // ── Adicionar ponto ───────────────────────────────────────────────────────
-
   Future<void> _adicionarPonto(TapPosition _, LatLng novoWaypoint) async {
-    if (_loading) return; // Ignora toque enquanto carrega
+    if (_loading) return;
 
     final anteriorWaypoint =
         _waypoints.isNotEmpty ? _waypoints.last : null;
 
     setState(() {
       _waypoints.add(novoWaypoint);
-      _loading = anteriorWaypoint != null; // só carrega se há ponto anterior
+      _loading = anteriorWaypoint != null;
     });
 
-    if (anteriorWaypoint == null) return; // Primeiro ponto: sem segmento ainda
+    if (anteriorWaypoint == null) return;
 
-    // Busca rota OSRM entre o ponto anterior e o novo
     final segmento = await OsrmService.fetchSegment(anteriorWaypoint, novoWaypoint);
 
     if (!mounted) return;
 
-    final int segIdx = _waypoints.length - 2; // índice do novo segmento
+    final int segIdx = _waypoints.length - 2;
 
     if (segmento != null) {
       setState(() {
@@ -84,7 +68,7 @@ class _TelaCriarRotaMapaState extends State<TelaCriarRotaMapa> {
         _loading = false;
       });
     } else {
-      // Fallback: linha reta com aviso visual
+
       setState(() {
         _segments.add([anteriorWaypoint, novoWaypoint]);
         _fallbackSegments.add(segIdx);
@@ -117,8 +101,6 @@ class _TelaCriarRotaMapaState extends State<TelaCriarRotaMapa> {
     }
   }
 
-  // ── Desfazer ──────────────────────────────────────────────────────────────
-
   void _desfazer() {
     if (_waypoints.isEmpty || _loading) return;
     setState(() {
@@ -130,8 +112,6 @@ class _TelaCriarRotaMapaState extends State<TelaCriarRotaMapa> {
       }
     });
   }
-
-  // ── Remover ponto específico ──────────────────────────────────────────────
 
   Future<void> _confirmarRemocao(int index) async {
     final confirmar = await showDialog<bool>(
@@ -169,17 +149,14 @@ class _TelaCriarRotaMapaState extends State<TelaCriarRotaMapa> {
   }
 
   Future<void> _removerPontoERecalcular(int index) async {
-    // Identifica quais segmentos dependem deste ponto
-    // Ponto index conecta: segmento [index-1] (de index-1 → index)
-    //                 e segmento [index] (de index → index+1)
+
     setState(() {
       _waypoints.removeAt(index);
 
-      // Remove segmento à direita (index → index+1), se existir
       if (index < _segments.length) {
         _fallbackSegments.remove(index);
         _segments.removeAt(index);
-        // Reajusta índices dos fallbacks acima
+
         final updatedFallbacks = <int>{};
         for (final i in _fallbackSegments) {
           updatedFallbacks.add(i > index ? i - 1 : i);
@@ -189,7 +166,6 @@ class _TelaCriarRotaMapaState extends State<TelaCriarRotaMapa> {
           ..addAll(updatedFallbacks);
       }
 
-      // Remove segmento à esquerda (index-1 → index), se existir
       if (index - 1 >= 0 && index - 1 < _segments.length) {
         _fallbackSegments.remove(index - 1);
         _segments.removeAt(index - 1);
@@ -198,7 +174,6 @@ class _TelaCriarRotaMapaState extends State<TelaCriarRotaMapa> {
       _loading = _waypoints.length >= 2 && index > 0 && index <= _waypoints.length;
     });
 
-    // Se agora index-1 e index existem, recalcula o segmento entre eles
     if (index > 0 && index <= _waypoints.length - 1) {
       final from = _waypoints[index - 1];
       final to = _waypoints[index];
@@ -219,8 +194,6 @@ class _TelaCriarRotaMapaState extends State<TelaCriarRotaMapa> {
       setState(() => _loading = false);
     }
   }
-
-  // ── Recalcular toda a rota (ao reordenar) ───────────────────────────────
 
   Future<void> _recalcularTodaRota() async {
     setState(() {
@@ -266,8 +239,6 @@ class _TelaCriarRotaMapaState extends State<TelaCriarRotaMapa> {
     }
   }
 
-  // ── Finalizar ─────────────────────────────────────────────────────────────
-
   void _finalizar() {
     final fullRoute = _fullPolyline;
     _mapService.addRouteWithPoints(
@@ -304,11 +275,9 @@ class _TelaCriarRotaMapaState extends State<TelaCriarRotaMapa> {
     );
   }
 
-  // ── Marcadores ────────────────────────────────────────────────────────────
-
   List<Marker> _buildMarkers() {
     final markers = <Marker>[
-      // Marcador da faculdade (referência estática)
+
       Marker(
         point: MapRouteService.facultyPosition,
         width: 44,
@@ -390,8 +359,6 @@ class _TelaCriarRotaMapaState extends State<TelaCriarRotaMapa> {
     return markers;
   }
 
-  // ── Polilinha ─────────────────────────────────────────────────────────────
-
   List<Polyline> _buildPolylines() {
     if (_segments.isEmpty) return [];
 
@@ -406,7 +373,7 @@ class _TelaCriarRotaMapaState extends State<TelaCriarRotaMapa> {
           color: isFallback
               ? Colors.orange.withAlpha(200)
               : Colors.indigo,
-          // Linha tracejada para segmentos fallback (linha reta)
+
           pattern: isFallback
               ? StrokePattern.dashed(segments: const [10, 6])
               : StrokePattern.solid(),
@@ -416,8 +383,6 @@ class _TelaCriarRotaMapaState extends State<TelaCriarRotaMapa> {
 
     return polylines;
   }
-
-  // ── Painel inferior ───────────────────────────────────────────────────────
 
   Widget _buildBottomPanel() {
     if (_waypoints.isEmpty) {
@@ -444,7 +409,7 @@ class _TelaCriarRotaMapaState extends State<TelaCriarRotaMapa> {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          // Cabeçalho
+
           Container(
             width: double.infinity,
             padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
@@ -477,7 +442,6 @@ class _TelaCriarRotaMapaState extends State<TelaCriarRotaMapa> {
             ),
           ),
 
-          // Lista de waypoints
           Flexible(
             child: ReorderableListView.builder(
               padding: EdgeInsets.zero,
@@ -565,8 +529,6 @@ class _TelaCriarRotaMapaState extends State<TelaCriarRotaMapa> {
     );
   }
 
-  // ── Build ─────────────────────────────────────────────────────────────────
-
   @override
   Widget build(BuildContext context) {
     final canFinish = _waypoints.length >= 2 && !_loading;
@@ -611,10 +573,9 @@ class _TelaCriarRotaMapaState extends State<TelaCriarRotaMapa> {
 
       body: Column(
         children: [
-          // Banner de status / instrução
+
           _buildStatusBanner(),
 
-          // Mapa
           Expanded(
             child: Stack(
               children: [
@@ -640,7 +601,6 @@ class _TelaCriarRotaMapaState extends State<TelaCriarRotaMapa> {
                   ],
                 ),
 
-                // Overlay de loading ao buscar rota
                 if (_loading)
                   Positioned(
                     top: 12,
@@ -685,12 +645,10 @@ class _TelaCriarRotaMapaState extends State<TelaCriarRotaMapa> {
             ),
           ),
 
-          // Painel inferior
           _buildBottomPanel(),
         ],
       ),
 
-      // FAB: Desfazer
       floatingActionButton: _waypoints.isEmpty
           ? null
           : FloatingActionButton.small(

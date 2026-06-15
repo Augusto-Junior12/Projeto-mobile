@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:projeto_app/utils/validadores.dart';
 
-// Tela de recuperação de senha, onde o usuário pode digitar seu e-mail para receber um link de redefinição de senha
 class TelaEsqueciSenha extends StatefulWidget {
   const TelaEsqueciSenha({super.key});
 
@@ -10,7 +9,6 @@ class TelaEsqueciSenha extends StatefulWidget {
   State<TelaEsqueciSenha> createState() => _TelaEsqueciSenhaState();
 }
 
-// A tela de recuperação de senha é simples, com um campo para o usuário digitar seu e-mail e um botão para enviar o link de recuperação
 class _TelaEsqueciSenhaState extends State<TelaEsqueciSenha> {
 
   final _formKey = GlobalKey<FormState>();
@@ -18,7 +16,6 @@ class _TelaEsqueciSenhaState extends State<TelaEsqueciSenha> {
 
   bool _carregando = false;
 
-  // Envia o link de redefinição de senha via Firebase Auth
   Future<void> _recuperarSenha() async {
     if (!_formKey.currentState!.validate()) return;
 
@@ -38,7 +35,7 @@ class _TelaEsqueciSenhaState extends State<TelaEsqueciSenha> {
         ),
       );
 
-      Navigator.pop(context); // volta para o login
+      Navigator.pop(context);
     } on FirebaseAuthException catch (e) {
       if (!mounted) return;
 
@@ -82,7 +79,6 @@ class _TelaEsqueciSenhaState extends State<TelaEsqueciSenha> {
     super.dispose();
   }
 
-  // Construímos a interface da tela de recuperação de senha, com um campo para o e-mail e um botão para enviar
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -92,12 +88,12 @@ class _TelaEsqueciSenhaState extends State<TelaEsqueciSenha> {
           'UniGo',
           style: TextStyle(
             fontWeight: FontWeight.bold,
-          ), // Deixa o nome mais destacado
+          ),
         ),
-        centerTitle: true, // Centraliza o título
-        backgroundColor: Colors.indigo, // Cor de fundo do AppBar
-        foregroundColor: Colors.white, // Deixa o texto do título branco para dar contraste
-        elevation: 4, // Adiciona uma leve sombra embaixo do AppBar
+        centerTitle: true,
+        backgroundColor: Colors.indigo,
+        foregroundColor: Colors.white,
+        elevation: 4,
       ),
 
       body: Padding(
@@ -109,7 +105,6 @@ class _TelaEsqueciSenhaState extends State<TelaEsqueciSenha> {
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
 
-              // Título da tela
               const Text(
                 "Esqueceu sua senha?",
                 style: TextStyle(
@@ -122,7 +117,6 @@ class _TelaEsqueciSenhaState extends State<TelaEsqueciSenha> {
 
               const SizedBox(height: 50),
 
-              // Texto explicativo
               const Text(
                 "Digite seu e-mail e enviaremos um link para redefinir sua senha.",
                 textAlign: TextAlign.center,
@@ -130,7 +124,6 @@ class _TelaEsqueciSenhaState extends State<TelaEsqueciSenha> {
 
               const SizedBox(height: 30),
 
-              // Campo de e-mail
               TextFormField(
                 controller: _emailController,
                 keyboardType: TextInputType.emailAddress,
@@ -147,7 +140,6 @@ class _TelaEsqueciSenhaState extends State<TelaEsqueciSenha> {
 
               const SizedBox(height: 30),
 
-              // Botão para enviar o link de recuperação
               SizedBox(
                 width: double.infinity,
                 child: ElevatedButton(

@@ -8,7 +8,6 @@ import 'package:projeto_app/repositories/usuario_repository.dart';
 import 'package:projeto_app/services/map_route_service.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
-// Tela de login — autentica o usuário via Firebase Auth e busca o perfil no Firestore
 class Telalogin extends StatefulWidget {
   const Telalogin({super.key});
 
@@ -26,7 +25,6 @@ class _TelaloginState extends State<Telalogin> {
   bool _carregando = false;
   String? _erroBanco;
 
-  // Realiza o login via Firebase Auth
   Future<void> _entrar() async {
     if (!_formKey.currentState!.validate()) return;
 
@@ -44,12 +42,11 @@ class _TelaloginState extends State<Telalogin> {
       if (!mounted) return;
 
       if (usuario != null) {
-        // Garante que as rotas estão carregadas antes de ir para a Home
+
         await MapRouteService().loadUserRoutes(usuario.uid!);
 
         if (!mounted) return;
 
-        // Login bem-sucedido: navega para Home passando o usuário logado
         Navigator.pushReplacement(
           context,
           MaterialPageRoute(
@@ -111,7 +108,6 @@ class _TelaloginState extends State<Telalogin> {
 
                 const SizedBox(height: 60),
 
-                // Campo E-mail
                 TextFormField(
                   controller: _emailController,
                   keyboardType: TextInputType.emailAddress,
@@ -128,7 +124,6 @@ class _TelaloginState extends State<Telalogin> {
 
                 const SizedBox(height: 20),
 
-                // Campo Senha
                 TextFormField(
                   controller: _senhaController,
                   obscureText: !_senhaVisivel,
@@ -149,7 +144,6 @@ class _TelaloginState extends State<Telalogin> {
                   ),
                 ),
 
-                // Mensagem de erro
                 if (_erroBanco != null) ...[
                   const SizedBox(height: 10),
                   Text(

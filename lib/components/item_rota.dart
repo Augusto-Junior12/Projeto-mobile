@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:projeto_app/components/botao_remover.dart';
 
-// Componente reutilizável para construir cada item da lista
 class ItemRota extends StatelessWidget {
   final String titulo;
   final String subtitulo;
@@ -59,9 +58,9 @@ class ItemRota extends StatelessWidget {
             )
           ],
         ),
-        // Aqui deixamos as opções mais visíveis e usamos o componente exigido
+
         trailing: Row(
-          mainAxisSize: MainAxisSize.min, // Ocupa apenas o espaço necessário
+          mainAxisSize: MainAxisSize.min,
           children: [
             IconButton(
               icon: const Icon(Icons.edit, color: Colors.indigo),

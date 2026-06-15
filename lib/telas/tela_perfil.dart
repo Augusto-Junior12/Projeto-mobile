@@ -6,8 +6,6 @@ import 'package:projeto_app/telas/tela_editar_dados.dart';
 import 'package:projeto_app/utils/componentes.dart';
 import 'package:projeto_app/repositories/usuario_repository.dart';
 
-//bora resolver isso ai
-// TelaPerfil — exibe os dados reais do usuário logado vindos do Firestore e gerencia a foto de perfil
 class TelaPerfil extends StatefulWidget {
   final UsuarioModel usuarioLogado;
 
@@ -18,7 +16,7 @@ class TelaPerfil extends StatefulWidget {
 }
 
 class _TelaPerfilState extends State<TelaPerfil> {
-  // Mantém a referência local para atualizar após edição
+
   late UsuarioModel _usuario;
   final UsuarioRepository _repository = UsuarioRepository();
 
@@ -28,7 +26,6 @@ class _TelaPerfilState extends State<TelaPerfil> {
     _usuario = widget.usuarioLogado;
   }
 
-  // Seleciona uma imagem do dispositivo e atualiza a foto do perfil
   Future<void> _escolherFotoPerfil() async {
     try {
       final resultado = await FilePicker.pickFiles(
@@ -39,10 +36,8 @@ class _TelaPerfilState extends State<TelaPerfil> {
       if (resultado != null && resultado.files.single.path != null) {
         final caminhoFoto = resultado.files.single.path!;
 
-        // Cria a cópia com a nova foto de perfil
         final usuarioAtualizado = _usuario.copyWith(fotoPath: caminhoFoto);
 
-        // Atualiza no Firestore via repositório
         await _repository.atualizar(usuarioAtualizado);
 
         setState(() {
@@ -70,7 +65,6 @@ class _TelaPerfilState extends State<TelaPerfil> {
     }
   }
 
-  // Constrói o widget da foto de perfil, validando se o arquivo físico ainda existe no disco
   Widget _buildAvatar() {
     final fotoPath = _usuario.fotoPath;
     if (fotoPath != null && File(fotoPath).existsSync()) {
@@ -87,7 +81,6 @@ class _TelaPerfilState extends State<TelaPerfil> {
     );
   }
 
-  // Pop-up de Avaliação
   void _mostrarDialogoAvaliacao(BuildContext context) {
     int estrelasSelecionadas = 0;
 
@@ -168,7 +161,6 @@ class _TelaPerfilState extends State<TelaPerfil> {
     );
   }
 
-  // Confirmação de saída usando CaixaDialogo (utils/componentes.dart)
   Future<void> _confirmarSaida(BuildContext context) async {
     final confirmado = await CaixaDialogo.confirmar(
       context,
@@ -181,7 +173,6 @@ class _TelaPerfilState extends State<TelaPerfil> {
     }
   }
 
-  // Navega para edição e atualiza os dados locais ao retornar
   Future<void> _irParaEdicao(BuildContext context) async {
     final usuarioAtualizado = await Navigator.push<UsuarioModel>(
       context,
@@ -190,7 +181,6 @@ class _TelaPerfilState extends State<TelaPerfil> {
       ),
     );
 
-    // Se o usuário salvou alterações, atualiza a tela de perfil
     if (usuarioAtualizado != null) {
       setState(() => _usuario = usuarioAtualizado);
     }
@@ -205,7 +195,6 @@ class _TelaPerfilState extends State<TelaPerfil> {
         children: [
           const SizedBox(height: 20),
 
-          // Cabeçalho de Identidade — dados reais do Firestore + foto editável
           Center(
             child: Column(
               children: [
@@ -272,7 +261,6 @@ class _TelaPerfilState extends State<TelaPerfil> {
           const SizedBox(height: 40),
           const Divider(),
 
-          // Botão: Editar Dados
           ListTile(
             leading: const Icon(Icons.edit, color: Colors.indigo),
             title: const Text('Editar dados'),
@@ -285,7 +273,6 @@ class _TelaPerfilState extends State<TelaPerfil> {
           ),
           const Divider(height: 1),
 
-          // Botão: Avaliar App
           ListTile(
             leading: const Icon(Icons.star_rate, color: Colors.amber),
             title: const Text('Avaliar app'),
@@ -298,7 +285,6 @@ class _TelaPerfilState extends State<TelaPerfil> {
           ),
           const Divider(height: 1),
 
-          // Botão: Sair
           ListTile(
             leading: const Icon(Icons.logout, color: Colors.red),
             title: const Text(

@@ -8,17 +8,15 @@ import 'package:projeto_app/services/notification_service.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
-// ── Modelo de Rota ───────────────────────────────────────────────────────────
-/// Representa uma rota de transporte com metadados e referência opcional ao GeoJSON.
 class RouteInfo {
   final String id;
   final String name;
   final String origin;
   final String destination;
   final String estimatedTime;
-  /// null = sem polilinha; -1 = pontos customizados; ≥0 = índice GeoJSON
+
   final int? geoJsonIndex;
-  /// Pontos definidos pelo usuário (usado quando geoJsonIndex == -1)
+
   final List<LatLng>? customPoints;
 
   RouteInfo({
@@ -31,12 +29,10 @@ class RouteInfo {
     this.customPoints,
   });
 
-  /// Indica se a rota possui dados geográficos para desenhar no mapa
   bool get hasGeoData =>
       (geoJsonIndex != null && geoJsonIndex! >= 0) ||
       (customPoints != null && customPoints!.length >= 2);
 
-  // Converte para salvar no Firestore
   Map<String, dynamic> toMap() {
     return {
       'id': id,
@@ -51,7 +47,6 @@ class RouteInfo {
     };
   }
 
-  // Reconstrói a partir do Firestore
   factory RouteInfo.fromMap(Map<String, dynamic> map, String docId) {
     var pointsData = map['customPoints'] as List<dynamic>?;
     List<LatLng>? points;
@@ -70,52 +65,37 @@ class RouteInfo {
   }
 }
 
-/// Serviço Singleton para geolocalização, rotas GeoJSON e geofencing.
-/// Comunica estado para as telas via ValueNotifier.
 class MapRouteService {
-  // ── Singleton ──────────────────────────────────────────────────────────
+
   static final MapRouteService _instance = MapRouteService._internal();
   factory MapRouteService() => _instance;
   MapRouteService._internal();
 
-  // ── Constantes ─────────────────────────────────────────────────────────
-  /// Coordenadas do IFS – Campus Lagarto/SE
-  /// Estr. da Barragem, 286 - Jardim Campo Novo, Lagarto - SE
   static const LatLng facultyPosition = LatLng(-10.9392, -37.6569);
 
-  /// Raio da cerca virtual em metros
   static const double geofenceRadius = 200.0;
 
-  // ── ValueNotifiers (estado reativo) ────────────────────────────────────
-  /// Posição atual do usuário (null = ainda não obtida)
   final ValueNotifier<LatLng?> userPosition = ValueNotifier<LatLng?>(null);
 
-  /// Coordenadas da rota ativa (vazio = nenhuma rota selecionada)
   final ValueNotifier<List<LatLng>> activeRoute =
       ValueNotifier<List<LatLng>>([]);
 
-  /// Nome da rota ativa
   final ValueNotifier<String?> activeRouteName = ValueNotifier<String?>(null);
 
-  /// Indica se o aluno chegou na faculdade
   final ValueNotifier<bool> arrivedAtFaculty = ValueNotifier<bool>(false);
 
-  /// Lista dinâmica de rotas disponíveis
   final ValueNotifier<List<RouteInfo>> routes =
       ValueNotifier<List<RouteInfo>>([]);
 
-  // ── Internos ───────────────────────────────────────────────────────────
   StreamSubscription<Position>? _positionSubscription;
   StreamSubscription<User?>? _authSubscription;
   bool _geofenceTriggered = false;
   bool _initialized = false;
   List<RouteInfo> _defaultRoutes = [];
 
-  // ── Inicialização ──────────────────────────────────────────────────────
   Future<void> init() async {
     if (_initialized) return;
 
-    // Carrega as rotas padrão na lista base
     _loadDefaultRoutes();
 
     final hasPermission = await _checkAndRequestPermission();
@@ -123,12 +103,11 @@ class MapRouteService {
       _startLocationTracking();
     }
 
-    // Escuta mudanças na autenticação
     _authSubscription = FirebaseAuth.instance.authStateChanges().listen((user) {
       if (user != null) {
         loadUserRoutes(user.uid);
       } else {
-        // Usuário deslogou: mantém apenas as rotas padrão
+
         routes.value = List.from(_defaultRoutes);
       }
     });
@@ -137,7 +116,6 @@ class MapRouteService {
     debugPrint('[MapRouteService] Inicializado. Permissão: $hasPermission');
   }
 
-  /// Popula a lista com as 3 rotas pré-definidas do GeoJSON
   void _loadDefaultRoutes() {
     _defaultRoutes = [
       RouteInfo(
@@ -168,7 +146,6 @@ class MapRouteService {
     routes.value = List.from(_defaultRoutes);
   }
 
-  /// Busca as rotas customizadas do usuário no Firestore
   Future<void> loadUserRoutes(String uid) async {
     try {
       final doc = await FirebaseFirestore.instance
@@ -192,8 +169,6 @@ class MapRouteService {
       debugPrint('[MapRouteService] Erro ao carregar rotas do Firestore: $e');
     }
   }
-
-  // ── Gerenciamento de Rotas ─────────────────────────────────────────────
 
   Future<void> _saveRouteToFirestore(RouteInfo route) async {
     final user = FirebaseAuth.instance.currentUser;
@@ -229,7 +204,6 @@ class MapRouteService {
     }
   }
 
-  /// Adiciona uma nova rota criada pelo usuário (sem dados GeoJSON)
   void addRoute({
     required String name,
     required String origin,
@@ -251,7 +225,6 @@ class MapRouteService {
     debugPrint('[MapRouteService] Rota "$name" adicionada (sem mapa).');
   }
 
-  /// Adiciona uma rota com pontos desenhados pelo usuário no mapa
   void addRouteWithPoints({
     required String name,
     required String origin,
@@ -266,7 +239,7 @@ class MapRouteService {
       origin: origin,
       destination: destination,
       estimatedTime: estimatedTime,
-      geoJsonIndex: -1, // Indica rota com pontos customizados
+      geoJsonIndex: -1,
       customPoints: List.unmodifiable(points),
     );
 
@@ -275,7 +248,6 @@ class MapRouteService {
     debugPrint('[MapRouteService] Rota "$name" adicionada com ${points.length} pontos.');
   }
 
-  /// Edita uma rota existente
   void editRoute({
     required String id,
     required String name,
@@ -307,11 +279,9 @@ class MapRouteService {
     debugPrint('[MapRouteService] Rota "$name" editada.');
   }
 
-  /// Remove uma rota pelo ID
   void removeRoute(String routeId) {
     final updated = routes.value.where((r) => r.id != routeId).toList();
 
-    // Se a rota ativa foi removida, limpa o mapa
     final removed = routes.value.firstWhere(
       (r) => r.id == routeId,
       orElse: () => RouteInfo(
@@ -327,8 +297,7 @@ class MapRouteService {
     }
 
     routes.value = updated;
-    
-    // Evitar tentar deletar as rotas padrão
+
     if (!['1', '2', '3'].contains(routeId)) {
       _deleteRouteFromFirestore(routeId);
     }
@@ -336,7 +305,6 @@ class MapRouteService {
     debugPrint('[MapRouteService] Rota "${removed.name}" removida.');
   }
 
-  // ── Permissões ─────────────────────────────────────────────────────────
   Future<bool> _checkAndRequestPermission() async {
     bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
     if (!serviceEnabled) {
@@ -361,11 +329,10 @@ class MapRouteService {
     return true;
   }
 
-  // ── Rastreamento GPS em tempo real ─────────────────────────────────────
   void _startLocationTracking() {
     const locationSettings = LocationSettings(
       accuracy: LocationAccuracy.high,
-      distanceFilter: 10, // Atualiza a cada 10 metros (economia de bateria)
+      distanceFilter: 10,
     );
 
     _positionSubscription = Geolocator.getPositionStream(
@@ -381,7 +348,6 @@ class MapRouteService {
     );
   }
 
-  // ── Cerca Virtual (Geofencing) ─────────────────────────────────────────
   void _checkGeofence(Position position) {
     final distance = Geolocator.distanceBetween(
       position.latitude,
@@ -401,15 +367,12 @@ class MapRouteService {
     }
   }
 
-  // ── Carregar rota GeoJSON ──────────────────────────────────────────────
-  /// Carrega a rota de índice [geoJsonIndex] do arquivo GeoJSON local.
-  /// [routeName] é o nome amigável para exibição e notificação.
   Future<bool> loadRoute(int geoJsonIndex, String routeName) async {
     try {
       List<LatLng> routePoints;
 
       if (geoJsonIndex == -1) {
-        // Rota com pontos customizados — busca direto na lista
+
         final route = routes.value.firstWhere(
           (r) => r.name == routeName && r.geoJsonIndex == -1,
           orElse: () => RouteInfo(
@@ -421,7 +384,7 @@ class MapRouteService {
         }
         routePoints = route.customPoints!;
       } else {
-        // Rota GeoJSON
+
         final String jsonString =
             await rootBundle.loadString('assets/routes/rotas.geojson');
         final Map<String, dynamic> geojson = json.decode(jsonString);
@@ -436,7 +399,6 @@ class MapRouteService {
         final geometry = feature['geometry'] as Map<String, dynamic>;
         final List<dynamic> coordinates = geometry['coordinates'] as List<dynamic>;
 
-        // GeoJSON usa [longitude, latitude]
         routePoints = coordinates.map<LatLng>((coord) {
           return LatLng(
             (coord[1] as num).toDouble(),
@@ -448,7 +410,6 @@ class MapRouteService {
       activeRoute.value = routePoints;
       activeRouteName.value = routeName;
 
-      // Dispara notificação de rota carregada
       await NotificationService().showRouteLoadedNotification(routeName);
 
       debugPrint(
@@ -460,13 +421,11 @@ class MapRouteService {
     }
   }
 
-  // ── Limpar rota ativa ──────────────────────────────────────────────────
   void clearRoute() {
     activeRoute.value = [];
     activeRouteName.value = null;
   }
 
-  // ── Liberar recursos ───────────────────────────────────────────────────
   void dispose() {
     _positionSubscription?.cancel();
     _authSubscription?.cancel();

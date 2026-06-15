@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 
-// Alerta de confirmação genérico reutilizável para toda a aplicação
 class CaixaDialogo {
   static Future<bool?> confirmar(
     BuildContext context, {
@@ -18,12 +17,12 @@ class CaixaDialogo {
           ),
           content: Text(mensagem),
           actions: [
-            // Botão NÃO
+
             TextButton(
               onPressed: () => Navigator.pop(context, false),
               child: const Text("Não", style: TextStyle(color: Colors.grey)),
             ),
-            // Botão SIM
+
             ElevatedButton(
               onPressed: () => Navigator.pop(context, true),
               style: ElevatedButton.styleFrom(

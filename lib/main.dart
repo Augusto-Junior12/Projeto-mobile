@@ -7,7 +7,7 @@ import 'package:projeto_app/firebase_options.dart';
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  await Firebase.initializeApp(                             // ← ADICIONAR
+  await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
   );
 
@@ -30,7 +30,7 @@ class MyApp extends StatelessWidget {
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.indigo),
         useMaterial3: true,
       ),
-      // Rota inicial e rota nomeada '/' para suportar logout via pushReplacementNamed
+
       initialRoute: '/',
       routes: {'/': (context) => const Telalogin()},
     );
