@@ -75,7 +75,7 @@ class _TelaloginState extends State<Telalogin> {
           );
         }
 
-        await MapRouteService().loadUserRoutes(usuario.uid!);
+        await MapRouteService().loadAllRoutes();
 
         if (!mounted) return;
 
@@ -136,7 +136,7 @@ class _TelaloginState extends State<Telalogin> {
       if (!mounted) return;
 
       if (usuario != null) {
-        await MapRouteService().loadUserRoutes(usuario.uid!);
+        await MapRouteService().loadAllRoutes();
 
         if (!mounted) return;
 

@@ -5,6 +5,7 @@ import 'package:flutter/services.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:projeto_app/services/notification_service.dart';
+import 'package:projeto_app/repositories/rota_repository.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
@@ -14,6 +15,7 @@ class RouteInfo {
   final String origin;
   final String destination;
   final String estimatedTime;
+  final String createdBy;
 
   final int? geoJsonIndex;
 
@@ -25,6 +27,7 @@ class RouteInfo {
     required this.origin,
     required this.destination,
     required this.estimatedTime,
+    this.createdBy = '',
     this.geoJsonIndex,
     this.customPoints,
   });
@@ -40,6 +43,7 @@ class RouteInfo {
       'origin': origin,
       'destination': destination,
       'estimatedTime': estimatedTime,
+      'createdBy': createdBy,
       'geoJsonIndex': geoJsonIndex,
       'customPoints': customPoints
           ?.map((p) => {'lat': p.latitude, 'lng': p.longitude})
@@ -59,6 +63,7 @@ class RouteInfo {
       origin: map['origin'] ?? '',
       destination: map['destination'] ?? '',
       estimatedTime: map['estimatedTime'] ?? '',
+      createdBy: map['createdBy'] ?? '',
       geoJsonIndex: map['geoJsonIndex'],
       customPoints: points,
     );
@@ -87,120 +92,35 @@ class MapRouteService {
   final ValueNotifier<List<RouteInfo>> routes =
       ValueNotifier<List<RouteInfo>>([]);
 
+  final RotaRepository _rotaRepo = RotaRepository();
+
   StreamSubscription<Position>? _positionSubscription;
-  StreamSubscription<User?>? _authSubscription;
   bool _geofenceTriggered = false;
   bool _initialized = false;
-  List<RouteInfo> _defaultRoutes = [];
 
   Future<void> init() async {
     if (_initialized) return;
 
-    _loadDefaultRoutes();
+    // Migra as 3 rotas padrão para o Firestore (apenas na primeira vez)
+    await _rotaRepo.migrarRotasPadrao();
 
     final hasPermission = await _checkAndRequestPermission();
     if (hasPermission) {
       _startLocationTracking();
     }
 
-    _authSubscription = FirebaseAuth.instance.authStateChanges().listen((user) {
-      if (user != null) {
-        loadUserRoutes(user.uid);
-      } else {
-
-        routes.value = List.from(_defaultRoutes);
-      }
-    });
-
     _initialized = true;
     debugPrint('[MapRouteService] Inicializado. Permissão: $hasPermission');
   }
 
-  void _loadDefaultRoutes() {
-    _defaultRoutes = [
-      RouteInfo(
-        id: '1',
-        name: 'Rota 1 - Ônibus A',
-        origin: 'Centro, Lagarto - SE',
-        destination: 'IFS Campus Lagarto',
-        estimatedTime: '30 minutos',
-        geoJsonIndex: 0,
-      ),
-      RouteInfo(
-        id: '2',
-        name: 'Rota 2 - Ônibus B',
-        origin: 'Rodoviária - Tv. Josias Machado, 178',
-        destination: 'IFS Campus Lagarto',
-        estimatedTime: '25 minutos',
-        geoJsonIndex: 1,
-      ),
-      RouteInfo(
-        id: '3',
-        name: 'Rota 3 - Ônibus C',
-        origin: 'Cidade Nova - R. João Marcos P. Carvalho',
-        destination: 'IFS Campus Lagarto',
-        estimatedTime: '35 minutos',
-        geoJsonIndex: 2,
-      ),
-    ];
-    routes.value = List.from(_defaultRoutes);
-  }
-
-  Future<void> loadUserRoutes(String uid) async {
+  /// Carrega todas as rotas da coleção global `rotas` do Firestore.
+  Future<void> loadAllRoutes() async {
     try {
-      final doc = await FirebaseFirestore.instance
-          .collection('usuarios')
-          .doc(uid)
-          .get();
-
-      if (doc.exists && doc.data()!.containsKey('rotas')) {
-        final rotasMap = doc.data()!['rotas'] as Map<String, dynamic>;
-        final userRoutes = rotasMap.entries.map((e) {
-          final map = e.value as Map<String, dynamic>;
-          return RouteInfo.fromMap(map, e.key);
-        }).toList();
-
-        routes.value = [..._defaultRoutes, ...userRoutes];
-        debugPrint('[MapRouteService] ${userRoutes.length} rotas carregadas do documento do usuário.');
-      } else {
-        routes.value = List.from(_defaultRoutes);
-      }
+      final allRoutes = await _rotaRepo.carregarTodas();
+      routes.value = allRoutes;
+      debugPrint('[MapRouteService] ${allRoutes.length} rotas carregadas do Firestore.');
     } catch (e) {
-      debugPrint('[MapRouteService] Erro ao carregar rotas do Firestore: $e');
-    }
-  }
-
-  Future<void> _saveRouteToFirestore(RouteInfo route) async {
-    final user = FirebaseAuth.instance.currentUser;
-    if (user != null) {
-      try {
-        await FirebaseFirestore.instance
-            .collection('usuarios')
-            .doc(user.uid)
-            .set({
-              'rotas': {
-                route.id: route.toMap()
-              }
-            }, SetOptions(merge: true));
-      } catch (e) {
-        debugPrint('[MapRouteService] Erro ao salvar rota no Firestore: $e');
-      }
-    }
-  }
-
-  Future<void> _deleteRouteFromFirestore(String routeId) async {
-    final user = FirebaseAuth.instance.currentUser;
-    if (user != null) {
-      try {
-        await FirebaseFirestore.instance
-            .collection('usuarios')
-            .doc(user.uid)
-            .update({
-              'rotas.$routeId': FieldValue.delete()
-            });
-      } catch (e) {
-        debugPrint('[MapRouteService] Erro ao deletar rota no Firestore: $e');
-      }
+      debugPrint('[MapRouteService] Erro ao carregar rotas: $e');
     }
   }
 
@@ -210,18 +130,20 @@ class MapRouteService {
     required String destination,
     required String estimatedTime,
   }) {
-    final docId = FirebaseFirestore.instance.collection('usuarios').doc().id;
+    final docId = FirebaseFirestore.instance.collection('rotas').doc().id;
+    final userEmail = FirebaseAuth.instance.currentUser?.email ?? '';
     final newRoute = RouteInfo(
       id: docId,
       name: name,
       origin: origin,
       destination: destination,
       estimatedTime: estimatedTime,
+      createdBy: userEmail,
       geoJsonIndex: null,
     );
 
     routes.value = [...routes.value, newRoute];
-    _saveRouteToFirestore(newRoute);
+    _rotaRepo.salvar(newRoute);
     debugPrint('[MapRouteService] Rota "$name" adicionada (sem mapa).');
   }
 
@@ -232,19 +154,21 @@ class MapRouteService {
     required String estimatedTime,
     required List<LatLng> points,
   }) {
-    final docId = FirebaseFirestore.instance.collection('usuarios').doc().id;
+    final docId = FirebaseFirestore.instance.collection('rotas').doc().id;
+    final userEmail = FirebaseAuth.instance.currentUser?.email ?? '';
     final newRoute = RouteInfo(
       id: docId,
       name: name,
       origin: origin,
       destination: destination,
       estimatedTime: estimatedTime,
+      createdBy: userEmail,
       geoJsonIndex: -1,
       customPoints: List.unmodifiable(points),
     );
 
     routes.value = [...routes.value, newRoute];
-    _saveRouteToFirestore(newRoute);
+    _rotaRepo.salvar(newRoute);
     debugPrint('[MapRouteService] Rota "$name" adicionada com ${points.length} pontos.');
   }
 
@@ -264,6 +188,7 @@ class MapRouteService {
           origin: origin,
           destination: destination,
           estimatedTime: estimatedTime,
+          createdBy: r.createdBy,
           geoJsonIndex: r.geoJsonIndex,
           customPoints: r.customPoints,
         );
@@ -274,7 +199,7 @@ class MapRouteService {
 
     routes.value = updatedList;
     if (updatedRoute != null) {
-      _saveRouteToFirestore(updatedRoute!);
+      _rotaRepo.editar(updatedRoute!);
     }
     debugPrint('[MapRouteService] Rota "$name" editada.');
   }
@@ -297,11 +222,7 @@ class MapRouteService {
     }
 
     routes.value = updated;
-
-    if (!['1', '2', '3'].contains(routeId)) {
-      _deleteRouteFromFirestore(routeId);
-    }
-
+    _rotaRepo.deletar(routeId);
     debugPrint('[MapRouteService] Rota "${removed.name}" removida.');
   }
 
@@ -428,6 +349,5 @@ class MapRouteService {
 
   void dispose() {
     _positionSubscription?.cancel();
-    _authSubscription?.cancel();
   }
 }

@@ -641,6 +641,19 @@ class _TelaCriarRotaMapaState extends State<TelaCriarRotaMapa> {
                       ),
                     ),
                   ),
+                if (_waypoints.isNotEmpty)
+                  Positioned(
+                    bottom: 16,
+                    right: 16,
+                    child: FloatingActionButton.small(
+                      onPressed: _loading ? null : _desfazer,
+                      backgroundColor:
+                          _loading ? Colors.grey : Colors.red.shade600,
+                      foregroundColor: Colors.white,
+                      tooltip: 'Desfazer último ponto',
+                      child: const Icon(Icons.undo),
+                    ),
+                  ),
               ],
             ),
           ),
@@ -648,17 +661,6 @@ class _TelaCriarRotaMapaState extends State<TelaCriarRotaMapa> {
           _buildBottomPanel(),
         ],
       ),
-
-      floatingActionButton: _waypoints.isEmpty
-          ? null
-          : FloatingActionButton.small(
-              onPressed: _loading ? null : _desfazer,
-              backgroundColor:
-                  _loading ? Colors.grey : Colors.red.shade600,
-              foregroundColor: Colors.white,
-              tooltip: 'Desfazer último ponto',
-              child: const Icon(Icons.undo),
-            ),
     );
   }
 

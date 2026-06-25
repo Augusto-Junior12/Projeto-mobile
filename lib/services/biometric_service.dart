@@ -65,6 +65,10 @@ class BiometricService {
     return (email: email, senha: senha);
   }
 
+  Future<String?> getEmailVinculado() async {
+    return await _storage.read(key: _keyEmail);
+  }
+
   Future<void> desativar() async {
     await _storage.delete(key: _keyEmail);
     await _storage.delete(key: _keySenha);

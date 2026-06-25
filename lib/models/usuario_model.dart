@@ -6,6 +6,7 @@ class UsuarioModel {
   final String email;
   final String? senha;
   final String? fotoPath;
+  final List<String> rotasSeguidas;
 
   const UsuarioModel({
     this.uid,
@@ -15,6 +16,7 @@ class UsuarioModel {
     required this.email,
     this.senha,
     this.fotoPath,
+    this.rotasSeguidas = const [],
   });
 
   Map<String, dynamic> toMap() {
@@ -25,7 +27,7 @@ class UsuarioModel {
       'matricula': matricula,
       'email': email,
       'fotoPath': fotoPath,
-
+      'rotasSeguidas': rotasSeguidas,
     };
   }
 
@@ -38,6 +40,7 @@ class UsuarioModel {
       email: map['email'] as String,
       senha: map['senha'] as String?,
       fotoPath: map['fotoPath'] as String?,
+      rotasSeguidas: List<String>.from(map['rotasSeguidas'] ?? []),
     );
   }
 
@@ -49,6 +52,7 @@ class UsuarioModel {
     String? email,
     String? senha,
     String? fotoPath,
+    List<String>? rotasSeguidas,
   }) {
     return UsuarioModel(
       uid: uid ?? this.uid,
@@ -58,11 +62,15 @@ class UsuarioModel {
       email: email ?? this.email,
       senha: senha ?? this.senha,
       fotoPath: fotoPath ?? this.fotoPath,
+      rotasSeguidas: rotasSeguidas ?? this.rotasSeguidas,
     );
   }
 
+  /// Criadores têm email @unigo.com; demais são leitores.
+  bool get isCriador => email.toLowerCase().endsWith('@unigo.com');
+
   @override
   String toString() {
-    return 'UsuarioModel(uid: $uid, nome: $nome, curso: $curso, matricula: $matricula, email: $email, fotoPath: $fotoPath)';
+    return 'UsuarioModel(uid: $uid, nome: $nome, curso: $curso, matricula: $matricula, email: $email, fotoPath: $fotoPath, isCriador: $isCriador)';
   }
 }

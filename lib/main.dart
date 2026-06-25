@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:projeto_app/telas/tela_login.dart';
+import 'package:projeto_app/telas/tela_splash.dart';
 import 'package:projeto_app/services/notification_service.dart';
 import 'package:projeto_app/services/map_route_service.dart';
 import 'package:firebase_core/firebase_core.dart';
@@ -32,7 +32,7 @@ class MyApp extends StatelessWidget {
       ),
 
       initialRoute: '/',
-      routes: {'/': (context) => const Telalogin()},
+      routes: {'/': (context) => const TelaSplash()},
     );
   }
 }

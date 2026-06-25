@@ -1,13 +1,16 @@
 import 'package:flutter/material.dart';
+import 'package:projeto_app/models/usuario_model.dart';
 import 'package:projeto_app/services/map_route_service.dart';
 import 'package:projeto_app/components/item_rota.dart';
 import 'package:projeto_app/utils/componentes.dart';
 import 'package:projeto_app/telas/tela_criar_rota_mapa.dart';
+import 'package:projeto_app/repositories/usuario_repository.dart';
 
 class TelaRotas extends StatefulWidget {
+  final UsuarioModel usuarioLogado;
   final VoidCallback? onIrParaMapa;
 
-  const TelaRotas({super.key, this.onIrParaMapa});
+  const TelaRotas({super.key, required this.usuarioLogado, this.onIrParaMapa});
 
   @override
   State<TelaRotas> createState() => _TelaRotasState();
@@ -15,15 +18,23 @@ class TelaRotas extends StatefulWidget {
 
 class _TelaRotasState extends State<TelaRotas> {
   final MapRouteService _mapService = MapRouteService();
+  final UsuarioRepository _usuarioRepo = UsuarioRepository();
+
+  late UsuarioModel _usuario;
+
+  bool get _isCriador => _usuario.isCriador;
 
   @override
   void initState() {
     super.initState();
+    _usuario = widget.usuarioLogado;
     _mapService.routes.addListener(_onRoutesChanged);
   }
 
   void _onRoutesChanged() {
-    if (mounted) setState(() {});
+    if (mounted) {
+      setState(() {});
+    }
   }
 
   @override
@@ -32,6 +43,7 @@ class _TelaRotasState extends State<TelaRotas> {
     super.dispose();
   }
 
+  // ─── Detalhes da Rota ─────────────────────────────────────────────────────
   void _mostrarDetalhesRota(BuildContext context, RouteInfo route) {
     showDialog(
       context: context,
@@ -110,6 +122,7 @@ class _TelaRotasState extends State<TelaRotas> {
     );
   }
 
+  // ─── Adicionar Rota (Criador) ─────────────────────────────────────────────
   void _mostrarDialogoAdicionarRota(BuildContext context) {
     final nomeController = TextEditingController();
     final origemController = TextEditingController();
@@ -275,6 +288,7 @@ class _TelaRotasState extends State<TelaRotas> {
     );
   }
 
+  // ─── Editar Rota (Criador) ────────────────────────────────────────────────
   void _mostrarDialogoEditarRota(BuildContext context, RouteInfo route) {
     final nomeController = TextEditingController(text: route.name);
     final origemController = TextEditingController(text: route.origin);
@@ -402,6 +416,7 @@ class _TelaRotasState extends State<TelaRotas> {
     );
   }
 
+  // ─── Excluir Rota (Criador) ───────────────────────────────────────────────
   Future<void> _confirmarExclusaoRota(BuildContext context, RouteInfo route) async {
     final confirmado = await CaixaDialogo.confirmar(
       context,
@@ -423,6 +438,8 @@ class _TelaRotasState extends State<TelaRotas> {
     }
   }
 
+  // ─── Widgets ──────────────────────────────────────────────────────────────
+
   Widget _buildRouteCounter(int total) {
     return Container(
       width: double.infinity,
@@ -433,17 +450,191 @@ class _TelaRotasState extends State<TelaRotas> {
           bottom: BorderSide(color: Color(0xFFD5D0F0), width: 1),
         ),
       ),
-      child: Text(
-        'Total de rotas ativas: $total',
-        textAlign: TextAlign.center,
-        style: const TextStyle(
-          fontSize: 15,
-          fontWeight: FontWeight.bold,
-          color: Color(0xFF3F3D8F),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Text(
+            'Total de rotas ativas: $total',
+            style: const TextStyle(
+              fontSize: 15,
+              fontWeight: FontWeight.bold,
+              color: Color(0xFF3F3D8F),
+            ),
+          ),
+          if (_isCriador) ...[
+            const Spacer(),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+              decoration: BoxDecoration(
+                color: Colors.indigo.shade700,
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: const Text(
+                'CRIADOR',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 10,
+                  fontWeight: FontWeight.bold,
+                  letterSpacing: 1,
+                ),
+              ),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+
+  /// Card estilizado "Nova Rota" que substitui o FAB (apenas para criadores).
+  Widget _buildNovaRotaCard() {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 16),
+      child: Material(
+        borderRadius: BorderRadius.circular(14),
+        color: Colors.indigo.shade50,
+        child: InkWell(
+          borderRadius: BorderRadius.circular(14),
+          onTap: () => _mostrarDialogoAdicionarRota(context),
+          child: Container(
+            padding: const EdgeInsets.symmetric(vertical: 18, horizontal: 20),
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(14),
+              border: Border.all(
+                color: Colors.indigo.shade200,
+                width: 1.5,
+              ),
+            ),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: Colors.indigo,
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: const Icon(Icons.add, color: Colors.white, size: 22),
+                ),
+                const SizedBox(width: 14),
+                const Text(
+                  'Criar nova rota',
+                  style: TextStyle(
+                    fontSize: 17,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.indigo,
+                  ),
+                ),
+              ],
+            ),
+          ),
         ),
       ),
     );
   }
+
+  // ─── Modal Buscar Rotas (Leitor) ──────────────────────────────────────────
+  void _mostrarModalBuscarRotas(List<RouteInfo> routesList) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) {
+        return StatefulBuilder(
+          builder: (context, setModalState) {
+            return Container(
+              height: MediaQuery.of(context).size.height * 0.8,
+              decoration: const BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+              ),
+              child: Column(
+                children: [
+                  Container(
+                    margin: const EdgeInsets.only(top: 12, bottom: 8),
+                    width: 40,
+                    height: 5,
+                    decoration: BoxDecoration(
+                      color: Colors.grey.shade300,
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                  ),
+                  const Padding(
+                    padding: EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+                    child: Row(
+                      children: [
+                        Icon(Icons.search, color: Colors.indigo),
+                        SizedBox(width: 10),
+                        Text(
+                          'Buscar Rotas',
+                          style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.indigo),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const Divider(),
+                  if (routesList.isEmpty)
+                    const Expanded(
+                      child: Center(
+                        child: Text('Nenhuma rota cadastrada no sistema.'),
+                      ),
+                    )
+                  else
+                    Expanded(
+                      child: ListView.separated(
+                        padding: const EdgeInsets.all(16),
+                        itemCount: routesList.length,
+                        separatorBuilder: (_, index) => const SizedBox(height: 12),
+                        itemBuilder: (context, index) {
+                          final route = routesList[index];
+                          final isSeguindo = _usuario.rotasSeguidas.contains(route.id);
+
+                          return Card(
+                            elevation: 1,
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                            child: ListTile(
+                              leading: const Icon(Icons.directions_bus, color: Colors.indigo),
+                              title: Text(route.name, style: const TextStyle(fontWeight: FontWeight.bold)),
+                              subtitle: Text('${route.origin} → ${route.destination}\n${route.estimatedTime}'),
+                              isThreeLine: true,
+                              trailing: IconButton(
+                                icon: Icon(
+                                  isSeguindo ? Icons.check_circle : Icons.add_circle_outline,
+                                  color: isSeguindo ? Colors.green : Colors.indigo,
+                                  size: 30,
+                                ),
+                                onPressed: () async {
+                                  final novasRotas = List<String>.from(_usuario.rotasSeguidas);
+                                  if (isSeguindo) {
+                                    novasRotas.remove(route.id);
+                                  } else {
+                                    novasRotas.add(route.id);
+                                  }
+
+                                  // Atualiza localmente
+                                  setModalState(() {
+                                    _usuario = _usuario.copyWith(rotasSeguidas: novasRotas);
+                                  });
+                                  setState(() {}); // Atualiza a tela por baixo
+
+                                  // Atualiza no banco
+                                  await _usuarioRepo.atualizarRotasSeguidas(_usuario.uid!, novasRotas);
+                                },
+                              ),
+                            ),
+                          );
+                        },
+                      ),
+                    ),
+                ],
+              ),
+            );
+          },
+        );
+      },
+    );
+  }
+
+  // ─── Build ────────────────────────────────────────────────────────────────
 
   @override
   Widget build(BuildContext context) {
@@ -451,64 +642,149 @@ class _TelaRotasState extends State<TelaRotas> {
 
     return Column(
       children: [
-
         _buildRouteCounter(routesList.length),
 
         Expanded(
-          child: Stack(
-            children: [
-              ListView(
-                padding: const EdgeInsets.all(16.0),
+          child: _isCriador
+              ? _buildCriadorView(routesList)
+              : _buildLeitorView(routesList),
+        ),
+      ],
+    );
+  }
+
+  /// View do criador: lista com cards de rota + botão "Nova Rota" no topo.
+  Widget _buildCriadorView(List<RouteInfo> routesList) {
+    return ListView(
+      padding: const EdgeInsets.all(16.0),
+      children: [
+        const Text(
+          'Gerenciar Rotas',
+          style: TextStyle(
+            fontSize: 24,
+            fontWeight: FontWeight.bold,
+            color: Colors.indigo,
+          ),
+          textAlign: TextAlign.center,
+        ),
+
+        const SizedBox(height: 20),
+
+        // Botão integrado para criar nova rota (substitui o FAB)
+        _buildNovaRotaCard(),
+
+        if (routesList.isEmpty)
+          const Padding(
+            padding: EdgeInsets.symmetric(vertical: 40),
+            child: Text(
+              'Nenhuma rota cadastrada.\nToque acima para adicionar.',
+              textAlign: TextAlign.center,
+              style: TextStyle(color: Colors.grey, fontSize: 16),
+            ),
+          )
+        else
+          ...routesList.map((route) => ItemRota(
+                titulo: route.name,
+                subtitulo: '${route.origin} → ${route.destination}',
+                horario: route.estimatedTime,
+                aoSelecionar: () => _mostrarDetalhesRota(context, route),
+                aoEditar: () => _mostrarDialogoEditarRota(context, route),
+                aoRemover: () => _confirmarExclusaoRota(context, route),
+              )),
+      ],
+    );
+  }
+
+  /// View do leitor: Lista as rotas favoritas + botão buscar.
+  Widget _buildLeitorView(List<RouteInfo> routesList) {
+    final rotasSeguidasInfo = routesList
+        .where((r) => _usuario.rotasSeguidas.contains(r.id))
+        .toList();
+
+    return ListView(
+      padding: const EdgeInsets.all(16.0),
+      children: [
+        // Botão para buscar rotas
+        Material(
+          borderRadius: BorderRadius.circular(14),
+          color: Colors.indigo.shade50,
+          child: InkWell(
+            borderRadius: BorderRadius.circular(14),
+            onTap: () => _mostrarModalBuscarRotas(routesList),
+            child: Container(
+              padding: const EdgeInsets.symmetric(vertical: 18, horizontal: 20),
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(14),
+                border: Border.all(
+                  color: Colors.indigo.shade200,
+                  width: 1.5,
+                ),
+              ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
                 children: [
+                  Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: Colors.indigo,
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: const Icon(Icons.search, color: Colors.white, size: 22),
+                  ),
+                  const SizedBox(width: 14),
                   const Text(
-                    'Rotas Disponíveis',
+                    'Buscar Rotas',
                     style: TextStyle(
-                      fontSize: 24,
+                      fontSize: 17,
                       fontWeight: FontWeight.bold,
                       color: Colors.indigo,
                     ),
-                    textAlign: TextAlign.center,
                   ),
-
-                  const SizedBox(height: 20),
-
-                  if (routesList.isEmpty)
-                    const Padding(
-                      padding: EdgeInsets.symmetric(vertical: 40),
-                      child: Text(
-                        'Nenhuma rota cadastrada.\nToque no botão + para adicionar.',
-                        textAlign: TextAlign.center,
-                        style: TextStyle(color: Colors.grey, fontSize: 16),
-                      ),
-                    )
-                  else
-                    ...routesList.map((route) => ItemRota(
-                          titulo: route.name,
-                          subtitulo: '${route.origin} → ${route.destination}',
-                          horario: route.estimatedTime,
-                          aoSelecionar: () => _mostrarDetalhesRota(context, route),
-                          aoEditar: () => _mostrarDialogoEditarRota(context, route),
-                          aoRemover: () => _confirmarExclusaoRota(context, route),
-                        )),
-
-                  const SizedBox(height: 80),
                 ],
               ),
-
-              Positioned(
-                bottom: 16,
-                right: 16,
-                child: FloatingActionButton(
-                  onPressed: () => _mostrarDialogoAdicionarRota(context),
-                  backgroundColor: Colors.indigo,
-                  foregroundColor: Colors.white,
-                  tooltip: 'Adicionar nova rota',
-                  child: const Icon(Icons.add),
-                ),
-              ),
-            ],
+            ),
           ),
         ),
+
+        const SizedBox(height: 24),
+        const Padding(
+          padding: EdgeInsets.only(left: 4, bottom: 8),
+          child: Text(
+            'Minhas Rotas',
+            style: TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.bold,
+              color: Colors.indigo,
+            ),
+          ),
+        ),
+
+        if (rotasSeguidasInfo.isEmpty)
+          const Padding(
+            padding: EdgeInsets.symmetric(vertical: 40),
+            child: Column(
+              children: [
+                Icon(Icons.bookmark_border, size: 64, color: Colors.grey),
+                SizedBox(height: 16),
+                Text(
+                  'Você ainda não adicionou\nnenhuma rota.',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(color: Colors.grey, fontSize: 16),
+                ),
+              ],
+            ),
+          )
+        else
+          ...rotasSeguidasInfo.map((route) => ItemRota(
+                titulo: route.name,
+                subtitulo: '${route.origin} → ${route.destination}',
+                horario: route.estimatedTime,
+                aoSelecionar: () => _mostrarDetalhesRota(context, route),
+                // Leitores não podem editar nem remover do banco, 
+                // para remover eles vão no modal de busca.
+                aoEditar: null,
+                aoRemover: null,
+              )),
       ],
     );
   }
