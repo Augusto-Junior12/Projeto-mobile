@@ -50,8 +50,6 @@ class RotaRepository {
     }
   }
 
-  /// Migra as 3 rotas hardcoded para o Firestore (executado apenas uma vez).
-  /// Verifica se a coleção `rotas` já contém documentos antes de migrar.
   Future<void> migrarRotasPadrao() async {
     try {
       final snapshot = await _col.limit(1).get();

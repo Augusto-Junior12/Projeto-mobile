@@ -27,6 +27,24 @@ O foco aqui não é a complexidade, mas a base sólida. O app foi construído pa
 | **Dart** | Linguagem de programação utilizada. |
 | **VS Code** | Editor de código com extensões Flutter/Dart. |
 
+## 📦 Dependências do Projeto
+
+Os seguintes pacotes e plugins do Flutter são necessários para o funcionamento do aplicativo e estão definidos no `pubspec.yaml`:
+
+* **[flutter_map](https://pub.dev/packages/flutter_map)**: Renderização e controle de mapas.
+* **[latlong2](https://pub.dev/packages/latlong2)**: Operações e cálculos com coordenadas geográficas (latitude e longitude).
+* **[geolocator](https://pub.dev/packages/geolocator)**: Acesso aos serviços de localização (GPS).
+* **[flutter_local_notifications](https://pub.dev/packages/flutter_local_notifications)**: Exibição de notificações locais.
+* **[file_picker](https://pub.dev/packages/file_picker)**: Seleção de arquivos do dispositivo.
+* **[firebase_core](https://pub.dev/packages/firebase_core)**, **[firebase_auth](https://pub.dev/packages/firebase_auth)**, **[cloud_firestore](https://pub.dev/packages/cloud_firestore)**: Integração com os serviços do Firebase (Core, Autenticação e Banco de dados).
+* **[http](https://pub.dev/packages/http)**: Requisições de rede e consumo de APIs.
+* **[local_auth](https://pub.dev/packages/local_auth)**: Autenticação biométrica nativa (impressão digital, Face ID).
+* **[flutter_secure_storage](https://pub.dev/packages/flutter_secure_storage)**: Armazenamento seguro de dados sensíveis.
+* **[cupertino_icons](https://pub.dev/packages/cupertino_icons)**: Conjunto de ícones baseados no iOS.
+* **[flutter_launcher_icons](https://pub.dev/packages/flutter_launcher_icons)** (dev): Ferramenta para geração dos ícones do app.
+
+*(O comando `flutter pub get` na seção abaixo se encarregará de baixar todas essas dependências automaticamente).*
+
 ## 🚀 Como Executar o App
 
 Para rodar este projeto localmente, você precisa ter o Flutter instalado e configurado em sua máquina.
