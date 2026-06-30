@@ -43,6 +43,8 @@ dependencies:
   firebase_auth: ^6.5.2
   firebase_core: ^4.10.0
   http: ^1.2.2
+  local_auth: ^2.3.0
+  flutter_secure_storage: ^9.2.2
 
 dev_dependencies:
   flutter_test:

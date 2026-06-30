@@ -5,6 +5,8 @@ import 'package:projeto_app/models/usuario_model.dart';
 import 'package:projeto_app/telas/tela_editar_dados.dart';
 import 'package:projeto_app/utils/componentes.dart';
 import 'package:projeto_app/repositories/usuario_repository.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:projeto_app/services/biometric_service.dart';
 
 class TelaPerfil extends StatefulWidget {
   final UsuarioModel usuarioLogado;
@@ -16,14 +18,48 @@ class TelaPerfil extends StatefulWidget {
 }
 
 class _TelaPerfilState extends State<TelaPerfil> {
-
-  late UsuarioModel _usuario;
   final UsuarioRepository _repository = UsuarioRepository();
+  late UsuarioModel _usuario;
+  String? _emailBiometriaVinculado;
+  bool _carregandoBiometria = true;
 
   @override
   void initState() {
     super.initState();
     _usuario = widget.usuarioLogado;
+    _verificarBiometria();
+  }
+
+  Future<void> _verificarBiometria() async {
+    final emailSalvo = await BiometricService().getEmailVinculado();
+    if (mounted) {
+      setState(() {
+        _emailBiometriaVinculado = emailSalvo;
+        _carregandoBiometria = false;
+      });
+    }
+  }
+
+  Future<void> _desvincularBiometria() async {
+    final confirmado = await CaixaDialogo.confirmar(
+      context,
+      titulo: 'Desvincular Biometria',
+      mensagem: 'Tem certeza que deseja remover o acesso biométrico atual?',
+    );
+
+    if (confirmado == true) {
+      await BiometricService().desativar();
+      await _verificarBiometria(); // Atualiza a tela
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Biometria desvinculada com sucesso!'),
+            backgroundColor: Colors.green,
+          ),
+        );
+      }
+    }
   }
 
   Future<void> _escolherFotoPerfil() async {
@@ -169,7 +205,10 @@ class _TelaPerfilState extends State<TelaPerfil> {
     );
 
     if (confirmado == true && context.mounted) {
-      Navigator.pushReplacementNamed(context, '/');
+      await FirebaseAuth.instance.signOut();
+      if (context.mounted) {
+        Navigator.pushReplacementNamed(context, '/');
+      }
     }
   }
 
@@ -231,13 +270,35 @@ class _TelaPerfilState extends State<TelaPerfil> {
 
                 const SizedBox(height: 15),
 
-                Text(
-                  _usuario.nome,
-                  style: const TextStyle(
-                    fontSize: 26,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.indigo,
-                  ),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Text(
+                      _usuario.nome,
+                      style: const TextStyle(
+                        fontSize: 26,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.indigo,
+                      ),
+                    ),
+                    const SizedBox(width: 10),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: _usuario.isCriador ? Colors.indigo.shade700 : Colors.green.shade600,
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Text(
+                        _usuario.isCriador ? 'CRIADOR' : 'LEITOR',
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 10,
+                          fontWeight: FontWeight.bold,
+                          letterSpacing: 1,
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
 
                 const SizedBox(height: 5),
@@ -259,7 +320,19 @@ class _TelaPerfilState extends State<TelaPerfil> {
           ),
 
           const SizedBox(height: 40),
-          const Divider(),
+          const Padding(
+            padding: EdgeInsets.only(left: 16, bottom: 8),
+            child: Text(
+              'Geral',
+              style: TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.bold,
+                color: Colors.grey,
+                letterSpacing: 1.2,
+              ),
+            ),
+          ),
+          const Divider(height: 1),
 
           ListTile(
             leading: const Icon(Icons.edit, color: Colors.indigo),
@@ -283,7 +356,42 @@ class _TelaPerfilState extends State<TelaPerfil> {
             ),
             onTap: () => _mostrarDialogoAvaliacao(context),
           ),
+          
+          const SizedBox(height: 30),
+          const Padding(
+            padding: EdgeInsets.only(left: 16, bottom: 8),
+            child: Text(
+              'Segurança',
+              style: TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.bold,
+                color: Colors.grey,
+                letterSpacing: 1.2,
+              ),
+            ),
+          ),
           const Divider(height: 1),
+
+          if (!_carregandoBiometria && _emailBiometriaVinculado != null)
+            ListTile(
+              leading: const Icon(Icons.fingerprint, color: Colors.orange),
+              title: const Text('Desvincular Biometria'),
+              subtitle: Text('Vinculado a: $_emailBiometriaVinculado'),
+              trailing: const Icon(
+                Icons.link_off,
+                size: 18,
+                color: Colors.orange,
+              ),
+              onTap: _desvincularBiometria,
+            )
+          else if (!_carregandoBiometria && _emailBiometriaVinculado == null)
+            const ListTile(
+              leading: Icon(Icons.fingerprint, color: Colors.grey),
+              title: Text('Biometria não ativada', style: TextStyle(color: Colors.grey)),
+            ),
+
+          const Divider(height: 1),
+          const SizedBox(height: 30),
 
           ListTile(
             leading: const Icon(Icons.logout, color: Colors.red),

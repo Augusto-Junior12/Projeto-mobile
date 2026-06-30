@@ -6,8 +6,8 @@ class ItemRota extends StatelessWidget {
   final String subtitulo;
   final String horario;
   final VoidCallback aoSelecionar;
-  final VoidCallback aoEditar;
-  final VoidCallback aoRemover;
+  final VoidCallback? aoEditar;
+  final VoidCallback? aoRemover;
 
   const ItemRota({
     super.key,
@@ -15,8 +15,8 @@ class ItemRota extends StatelessWidget {
     required this.subtitulo,
     required this.horario,
     required this.aoSelecionar,
-    required this.aoEditar,
-    required this.aoRemover,
+    this.aoEditar,
+    this.aoRemover,
   });
 
   @override
@@ -59,17 +59,22 @@ class ItemRota extends StatelessWidget {
           ],
         ),
 
-        trailing: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            IconButton(
-              icon: const Icon(Icons.edit, color: Colors.indigo),
-              tooltip: 'Editar',
-              onPressed: aoEditar,
-            ),
-            BotaoRemover(aoPressionar: aoRemover),
-          ],
-        ),
+        // Só mostra botões de edição/remoção se os callbacks existirem (perfil criador)
+        trailing: (aoEditar != null || aoRemover != null)
+            ? Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  if (aoEditar != null)
+                    IconButton(
+                      icon: const Icon(Icons.edit, color: Colors.indigo),
+                      tooltip: 'Editar',
+                      onPressed: aoEditar,
+                    ),
+                  if (aoRemover != null)
+                    BotaoRemover(aoPressionar: aoRemover!),
+                ],
+              )
+            : const Icon(Icons.chevron_right, color: Colors.grey),
       ),
     );
   }

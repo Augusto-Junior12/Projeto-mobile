@@ -6,6 +6,7 @@ import 'package:projeto_app/utils/validadores.dart';
 import 'package:projeto_app/models/usuario_model.dart';
 import 'package:projeto_app/repositories/usuario_repository.dart';
 import 'package:projeto_app/services/map_route_service.dart';
+import 'package:projeto_app/services/biometric_service.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
 class Telalogin extends StatefulWidget {
@@ -20,11 +21,35 @@ class _TelaloginState extends State<Telalogin> {
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _senhaController = TextEditingController();
   final UsuarioRepository _repository = UsuarioRepository();
+  final BiometricService _biometric = BiometricService();
 
   bool _senhaVisivel = false;
   bool _carregando = false;
   String? _erroBanco;
 
+  // Controla a visibilidade do botão de biometria
+  bool _biometriaDisponivel = false;
+  bool _biometriaAtivada = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _verificarBiometria();
+  }
+
+  /// Verifica se o dispositivo suporta biometria e se o usuário já a ativou.
+  Future<void> _verificarBiometria() async {
+    final disponivel = await _biometric.disponivel();
+    final ativada = await _biometric.estaAtivada();
+    if (mounted) {
+      setState(() {
+        _biometriaDisponivel = disponivel;
+        _biometriaAtivada = ativada;
+      });
+    }
+  }
+
+  // ── Login com e-mail e senha ───────────────────────────────────────────────
   Future<void> _entrar() async {
     if (!_formKey.currentState!.validate()) return;
 
@@ -42,8 +67,15 @@ class _TelaloginState extends State<Telalogin> {
       if (!mounted) return;
 
       if (usuario != null) {
+        // Oferece ativar biometria se disponível e ainda não ativada
+        if (_biometriaDisponivel && !_biometriaAtivada) {
+          await _oferecerAtivacaoBiometria(
+            _emailController.text.trim(),
+            _senhaController.text,
+          );
+        }
 
-        await MapRouteService().loadUserRoutes(usuario.uid!);
+        await MapRouteService().loadAllRoutes();
 
         if (!mounted) return;
 
@@ -64,6 +96,120 @@ class _TelaloginState extends State<Telalogin> {
       setState(() => _erroBanco = 'Erro ao fazer login. Tente novamente.');
     } finally {
       if (mounted) setState(() => _carregando = false);
+    }
+  }
+
+  // ── Login com biometria ────────────────────────────────────────────────────
+  Future<void> _entrarComBiometria() async {
+    setState(() {
+      _carregando = true;
+      _erroBanco = null;
+    });
+
+    try {
+      // 1. Abre o diálogo de biometria do sistema
+      final autenticado = await _biometric.autenticar();
+      if (!autenticado) {
+        if (mounted) setState(() => _carregando = false);
+        return;
+      }
+
+      // 2. Recupera as credenciais salvas no armazenamento seguro
+      final credenciais = await _biometric.lerCredenciais();
+      if (credenciais == null) {
+        if (mounted) {
+          setState(() {
+            _carregando = false;
+            _erroBanco = 'Nenhuma credencial salva. Faça login com e-mail e senha.';
+            _biometriaAtivada = false;
+          });
+        }
+        return;
+      }
+
+      // 3. Autentica no Firebase com as credenciais recuperadas
+      final UsuarioModel? usuario = await _repository.login(
+        credenciais.email,
+        credenciais.senha,
+      );
+
+      if (!mounted) return;
+
+      if (usuario != null) {
+        await MapRouteService().loadAllRoutes();
+
+        if (!mounted) return;
+
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(
+            builder: (context) => TelaHome(usuarioLogado: usuario),
+          ),
+        );
+      }
+    } on FirebaseAuthException catch (_) {
+      if (mounted) {
+        setState(() {
+          _carregando = false;
+          _erroBanco = 'Credenciais expiradas. Faça login com e-mail e senha.';
+        });
+        // Limpa credenciais inválidas para forçar novo login manual
+        await _biometric.desativar();
+        setState(() => _biometriaAtivada = false);
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _carregando = false;
+          _erroBanco = 'Erro na autenticação. Tente novamente.';
+        });
+      }
+    }
+  }
+
+  // ── Oferecer ativação da biometria após o primeiro login manual ────────────
+  Future<void> _oferecerAtivacaoBiometria(String email, String senha) async {
+    if (!mounted) return;
+
+    final ativar = await showDialog<bool>(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: const Text(
+          'Ativar login por biometria?',
+          style: TextStyle(
+            color: Colors.indigo,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        content: const Text(
+          'Nas próximas vezes, você poderá entrar com sua digital ou reconhecimento facial, sem precisar digitar a senha.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Agora não', style: TextStyle(color: Colors.grey)),
+          ),
+          ElevatedButton.icon(
+            onPressed: () => Navigator.pop(context, true),
+            icon: const Icon(Icons.fingerprint),
+            label: const Text('Ativar'),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.indigo,
+              foregroundColor: Colors.white,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(8),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+
+    if (ativar == true) {
+      await _biometric.salvarCredenciais(email, senha);
+      if (mounted) setState(() => _biometriaAtivada = true);
     }
   }
 
@@ -108,6 +254,7 @@ class _TelaloginState extends State<Telalogin> {
 
                 const SizedBox(height: 60),
 
+                // Campo E-mail
                 TextFormField(
                   controller: _emailController,
                   keyboardType: TextInputType.emailAddress,
@@ -124,6 +271,7 @@ class _TelaloginState extends State<Telalogin> {
 
                 const SizedBox(height: 20),
 
+                // Campo Senha
                 TextFormField(
                   controller: _senhaController,
                   obscureText: !_senhaVisivel,
@@ -144,6 +292,7 @@ class _TelaloginState extends State<Telalogin> {
                   ),
                 ),
 
+                // Mensagem de erro
                 if (_erroBanco != null) ...[
                   const SizedBox(height: 10),
                   Text(
@@ -171,6 +320,7 @@ class _TelaloginState extends State<Telalogin> {
 
                 const SizedBox(height: 30),
 
+                // Botão Entrar (e-mail e senha)
                 SizedBox(
                   width: double.infinity,
                   height: 50,
@@ -202,6 +352,47 @@ class _TelaloginState extends State<Telalogin> {
                   ),
                 ),
 
+                // Botão de biometria — aparece apenas se disponível e já ativada
+                if (_biometriaDisponivel && _biometriaAtivada) ...[
+                  const SizedBox(height: 16),
+                  Row(
+                    children: const [
+                      Expanded(child: Divider()),
+                      Padding(
+                        padding: EdgeInsets.symmetric(horizontal: 12),
+                        child: Text(
+                          'ou',
+                          style: TextStyle(color: Colors.grey),
+                        ),
+                      ),
+                      Expanded(child: Divider()),
+                    ],
+                  ),
+                  const SizedBox(height: 16),
+                  SizedBox(
+                    width: double.infinity,
+                    height: 50,
+                    child: OutlinedButton.icon(
+                      onPressed: _carregando ? null : _entrarComBiometria,
+                      icon: const Icon(Icons.fingerprint, size: 26),
+                      label: const Text(
+                        'Entrar com biometria',
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: Colors.indigo,
+                        side: const BorderSide(color: Colors.indigo, width: 1.5),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(25),
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+
                 const SizedBox(height: 20),
 
                 TextButton(
@@ -222,4 +413,4 @@ class _TelaloginState extends State<Telalogin> {
       ),
     );
   }
-}
+} 

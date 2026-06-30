@@ -1,5 +1,6 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:flutter/foundation.dart';
 import 'package:projeto_app/models/usuario_model.dart';
 
 class UsuarioRepository {
@@ -47,5 +48,15 @@ class UsuarioRepository {
 
   Future<bool> emailDisponivel(String email) async {
     return true;
+  }
+
+  Future<void> atualizarRotasSeguidas(String uid, List<String> rotasIds) async {
+    try {
+      await _firestore.collection('usuarios').doc(uid).update({
+        'rotasSeguidas': rotasIds,
+      });
+    } catch (e) {
+      debugPrint('[UsuarioRepository] Erro ao atualizar rotas seguidas: $e');
+    }
   }
 }
